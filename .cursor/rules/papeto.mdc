@@ -1,0 +1,12 @@
+---
+description: Papeto project rules (always on)
+alwaysApply: true
+---
+
+Follow AGENTS.md at the repository root, plus be/AGENTS.md or frontend/AGENTS.md for files in those folders.
+
+Before changing pet, meal or points logic, read docs/domain/pet-rules.md.
+
+Hard rules: no calories, macros, weight or meal scores anywhere; never store meal photos; 18+ only;
+meal endpoints require the meal_data consent; code and identifiers in English, UI text only in i18n (pt-BR);
+no provider SDK imports outside be/app/providers.

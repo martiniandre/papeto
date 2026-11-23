@@ -16,6 +16,11 @@ dependencies = [
     "arq",
     "redis",
     "tzdata",
+    "uvicorn>=0.54.0",
+    "python-multipart>=0.0.34",
+    "pyjwt>=2.15.1",
+    "argon2-cffi>=25.1.0",
+    "email-validator>=2.4.0",
 ]
 
 [dependency-groups]
@@ -25,6 +30,8 @@ dev = [
     "ruff",
     "mypy",
     "import-linter",
+    "httpx>=0.28.1",
+    "testcontainers[postgres]>=4.15.0",
 ]
 
 [tool.uv]
@@ -36,6 +43,7 @@ pythonpath = ["."]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 addopts = "-ra --strict-markers"
+markers = ["integration: needs Docker (Postgres via Testcontainers); not run by default CI step without Docker"]
 
 [tool.ruff]
 target-version = "py312"
@@ -87,3 +95,56 @@ name = "Domain does not import outer layers"
 type = "forbidden"
 source_modules = ["app.domain"]
 forbidden_modules = ["app.api", "app.db", "app.providers", "app.services", "app.worker"]
+
+[[tool.importlinter.contracts]]
+name = "Ports depend only on the domain"
+type = "forbidden"
+source_modules = ["app.ports"]
+forbidden_modules = [
+    "fastapi", "starlette", "sqlalchemy", "alembic", "asyncpg", "psycopg", "httpx", "redis",
+    "arq", "PIL", "stripe", "jwt", "argon2",
+    "app.api", "app.db", "app.providers", "app.services", "app.worker", "app.container",
+]
+allow_indirect_imports = false
+
+[[tool.importlinter.contracts]]
+name = "Services use ports and domain only"
+type = "forbidden"
+source_modules = ["app.services"]
+forbidden_modules = [
+    "fastapi", "starlette", "sqlalchemy", "alembic", "asyncpg", "psycopg", "httpx", "redis",
+    "arq", "PIL", "stripe", "jwt", "argon2",
+    "app.api", "app.db", "app.providers", "app.worker", "app.container", "app.main",
+]
+allow_indirect_imports = false
+
+[[tool.importlinter.contracts]]
+name = "API does not touch persistence, providers or SDKs"
+type = "forbidden"
+source_modules = ["app.api"]
+forbidden_modules = [
+    "sqlalchemy", "alembic", "asyncpg", "psycopg", "httpx", "redis", "arq", "PIL", "stripe",
+    "jwt", "argon2",
+    "app.db", "app.providers", "app.worker", "app.container", "app.main",
+]
+allow_indirect_imports = false
+
+[[tool.importlinter.contracts]]
+name = "DB layer is persistence only"
+type = "forbidden"
+source_modules = ["app.db"]
+forbidden_modules = [
+    "fastapi", "starlette", "httpx", "redis", "arq", "PIL", "stripe", "jwt", "argon2",
+    "app.api", "app.providers", "app.services", "app.worker", "app.container", "app.main",
+]
+allow_indirect_imports = false
+
+[[tool.importlinter.contracts]]
+name = "Providers implement ports and know nothing of the app layers"
+type = "forbidden"
+source_modules = ["app.providers"]
+forbidden_modules = [
+    "fastapi", "starlette", "sqlalchemy",
+    "app.api", "app.db", "app.services", "app.worker", "app.container", "app.main",
+]
+allow_indirect_imports = false

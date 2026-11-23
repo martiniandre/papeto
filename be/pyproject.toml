@@ -53,6 +53,9 @@ extend-exclude = [".venv"]
 [tool.ruff.lint]
 select = ["E", "W", "F", "I", "B", "UP", "SIM", "RUF", "N", "C4", "PT", "DTZ", "TID"]
 
+[tool.ruff.lint.per-file-ignores]
+"app/services/errors.py" = ["N818"]  # stable domain-style names, not *Error
+
 [tool.ruff.lint.flake8-tidy-imports.banned-api]
 "datetime.datetime.now".msg = "Take `now` from the Clock port instead."
 "datetime.datetime.utcnow".msg = "Take `now` from the Clock port instead."

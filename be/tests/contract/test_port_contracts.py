@@ -12,6 +12,7 @@ from uuid import UUID, uuid4
 from zoneinfo import ZoneInfo
 
 import pytest
+from argon2 import PasswordHasher
 
 from app.ports import (
     AnalyticsProvider,
@@ -114,7 +115,10 @@ async def test_vision_failures_use_port_errors(make: Callable[[], FoodVisionProv
 
 def _local_auth(clock: Clock) -> AuthProvider:
     return LocalAuthProvider(
-        secret="test-secret-with-more-than-32-characters", clock=clock, ids=SequentialIdGenerator()
+        secret="test-secret-with-more-than-32-characters",
+        clock=clock,
+        ids=SequentialIdGenerator(),
+        hasher=PasswordHasher(time_cost=1, memory_cost=8, parallelism=1),
     )
 
 

@@ -400,7 +400,7 @@ class SqlUsageRepository:
     async def increment(self, user_id: UUID, day: date) -> None:
         stmt = pg_insert(m.DailyUsageModel).values(user_id=user_id, local_day=day, analyses=1)
         stmt = stmt.on_conflict_do_update(
-            index_elements=[m.DailyUsageModel.user_id, m.DailyUsageModel.local_day],
+            index_elements=["user_id", "local_day"],
             set_={"analyses": m.DailyUsageModel.analyses + 1},
         )
         await self._s.execute(stmt)
@@ -427,7 +427,7 @@ class SqlPushTokenRepository:
             created_at=token.created_at,
         )
         stmt = stmt.on_conflict_do_update(
-            index_elements=[m.PushTokenModel.token],
+            index_elements=["token"],
             set_={"user_id": token.user_id, "platform": token.platform},
         )
         await self._s.execute(stmt)
@@ -479,7 +479,7 @@ class SqlSubscriptionRepository:
             created_at=subscription.created_at,
         )
         stmt = stmt.on_conflict_do_update(
-            index_elements=[m.SubscriptionModel.user_id],
+            index_elements=["user_id"],
             set_={
                 "provider": subscription.provider,
                 "status": subscription.status,
@@ -504,7 +504,7 @@ class SqlPaymentEventRepository:
                 received_at=event.received_at,
                 processed=event.processed,
             )
-            .on_conflict_do_nothing(index_elements=[m.PaymentEventModel.external_event_id])
+            .on_conflict_do_nothing(index_elements=["external_event_id"])
             .returning(m.PaymentEventModel.id)
         )
         return (await self._s.execute(stmt)).scalar_one_or_none() is not None

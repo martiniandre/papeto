@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
+from argon2 import PasswordHasher
+
 from app.ports.repositories import ConsentType, SubscriptionRecord, UnitOfWork
 from app.providers.fake_clock import FakeClock, SequentialIdGenerator
 from app.providers.fake_misc import NoopAnalytics, NoopErrorReporter
@@ -20,6 +22,7 @@ from tests.support.memory import MemoryUowFactory
 START = datetime(2026, 3, 10, 12, 0, tzinfo=UTC)
 PHOTO = b"\xff\xd8\xff fake jpeg bytes"
 JWT_SECRET = "test-secret-with-more-than-32-characters"
+FAST_HASHER = PasswordHasher(time_cost=1, memory_cost=8, parallelism=1)
 
 
 @dataclass
@@ -44,7 +47,13 @@ def make_world(uow_factory: MemoryUowFactory | None = None) -> World:
         clock=clock,
         ids=ids,
         vision=FakeFoodVision(),
-        auth=LocalAuthProvider(secret=JWT_SECRET, clock=clock, ids=ids),
+        auth=LocalAuthProvider(
+            secret=JWT_SECRET,
+            clock=clock,
+            ids=ids,
+            access_minutes=60 * 24 * 365,  # tests move the fake clock by days
+            hasher=FAST_HASHER,
+        ),
         analytics=NoopAnalytics(),
         error_reporter=NoopErrorReporter(),
     )

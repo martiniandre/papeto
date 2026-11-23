@@ -24,6 +24,7 @@ class LocalAuthProvider:
         access_minutes: int = 15,
         refresh_days: int = 30,
         algorithm: str = "HS256",
+        hasher: PasswordHasher | None = None,
     ) -> None:
         if len(secret) < 16:
             raise ValueError("JWT secret is too short")
@@ -33,7 +34,7 @@ class LocalAuthProvider:
         self._access = timedelta(minutes=access_minutes)
         self._refresh = timedelta(days=refresh_days)
         self._algorithm = algorithm
-        self._hasher = PasswordHasher()
+        self._hasher = hasher or PasswordHasher()
 
     @property
     def access_ttl_seconds(self) -> int:

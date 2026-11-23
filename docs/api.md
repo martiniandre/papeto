@@ -63,3 +63,25 @@ Never: calories, macros, grams, scores, health labels. The pet tip comes from an
 ## Health
 
 `GET /health` — liveness; `GET /health/ready` — DB and Redis reachable.
+
+## Implementation notes (backend, Stage 1)
+
+Implemented: `/auth/register|login|refresh`, `/consents`, `/me` (GET, PATCH, DELETE, `/export`), `/pet` (GET, PATCH),
+`/pet/pause` (POST, DELETE), `/meals` (POST, GET, GET `{id}`, PATCH, DELETE), `/health`, `/health/ready`.
+Not yet: Google/Apple login, password reset, push tokens, billing endpoints, webhooks.
+
+- `/health` and `/health/ready` live at the root (no `/v1`). Ready answers 503 with `{"status": "unavailable", "checks": {...}}`.
+- Register body: `email`, `password` (8+ chars), `name`, `adult_confirmed` (must be `true`, else 422 `ADULT_CONFIRMATION_REQUIRED`), optional `timezone` (IANA, default `America/Sao_Paulo`).
+  Auth answers `{access_token, refresh_token, token_type, expires_in}`. Refresh tokens are stateless JWTs (no rotation yet).
+- `DELETE /me` answers 202 with `deletion_scheduled_for` (now + 30 days). Signing in again cancels it. The hard delete job is not built yet.
+- `GET /meals`: `range=today|7d|30d` (local days of the user), `limit` (1..50, default 20), opaque `cursor`; answers `{items, next_cursor}`.
+- All four meal endpoints need an active `meal_data` consent (403 `MEAL_CONSENT_REQUIRED`). Export and account deletion never do.
+- `POST /meals` accepts JPEG, PNG, WebP or HEIC up to `MAX_UPLOAD_BYTES` (default 8 MiB): wrong type 422 `PHOTO_NOT_READABLE`, too large 413 `PHOTO_TOO_LARGE`.
+- Pet `color` is a lowercase token (`^[a-z0-9_-]{1,20}$`, default `default`) until the palette is decided.
+- `GET /pet` events: `life_lost` is returned once, relative to the lives the server last returned to this user.
+
+Stable error codes: `UNAUTHORIZED` 401, `INVALID_TOKEN` 401, `INVALID_CREDENTIALS` 401, `EMAIL_ALREADY_REGISTERED` 409,
+`ADULT_CONFIRMATION_REQUIRED` 422, `INVALID_TIMEZONE` 422, `VALIDATION_ERROR` 422, `MEAL_CONSENT_REQUIRED` 403,
+`DAILY_LIMIT_REACHED` 429, `PHOTO_NOT_READABLE` 422, `PHOTO_TOO_LARGE` 413, `NOT_FOOD` 422, `VISION_UNAVAILABLE` 503,
+`PREMIUM_REQUIRED` 402, `MEAL_NOT_FOUND` 404, `PET_NOT_FOUND` 404, `PET_ALREADY_PAUSED` 409, `PET_NOT_PAUSED` 409,
+`INVALID_CURSOR` 422, `NOT_FOUND` 404, `METHOD_NOT_ALLOWED` 405, `INTERNAL_ERROR` 500.

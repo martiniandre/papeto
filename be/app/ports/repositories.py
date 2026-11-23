@@ -224,16 +224,28 @@ class PaymentEventRepository(Protocol):
 
 
 class UnitOfWork(Protocol):
-    users: UserRepository
-    consents: ConsentRepository
-    pets: PetRepository
-    pauses: PauseRepository
-    meals: MealRepository
-    points: PointsRepository
-    usage: UsageRepository
-    push_tokens: PushTokenRepository
-    subscriptions: SubscriptionRepository
-    payment_events: PaymentEventRepository
+    """One transaction. Repositories are read-only properties so adapters may narrow their types."""
+
+    @property
+    def users(self) -> UserRepository: ...
+    @property
+    def consents(self) -> ConsentRepository: ...
+    @property
+    def pets(self) -> PetRepository: ...
+    @property
+    def pauses(self) -> PauseRepository: ...
+    @property
+    def meals(self) -> MealRepository: ...
+    @property
+    def points(self) -> PointsRepository: ...
+    @property
+    def usage(self) -> UsageRepository: ...
+    @property
+    def push_tokens(self) -> PushTokenRepository: ...
+    @property
+    def subscriptions(self) -> SubscriptionRepository: ...
+    @property
+    def payment_events(self) -> PaymentEventRepository: ...
 
     async def __aenter__(self) -> Self: ...
     async def __aexit__(

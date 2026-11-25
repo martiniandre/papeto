@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
 import { isApiError } from '@/api/client';
@@ -24,13 +24,12 @@ export default function CreateAccountScreen() {
   const {
     control,
     handleSubmit,
-    watch,
     formState: { errors, isSubmitting },
   } = useForm<RegisterValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: { name: '', email: '', password: '', adult: false },
   });
-  const values = watch();
+  const values = useWatch({ control });
   const msg = (key?: string) => (key ? (t as (k: string) => string)(key) : undefined);
 
   const onSubmit = handleSubmit(async (input) => {

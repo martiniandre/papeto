@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router } from 'expo-router';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { Pressable, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
@@ -23,13 +23,12 @@ export default function NamePetScreen() {
     control,
     handleSubmit,
     setValue,
-    watch,
     formState: { errors },
   } = useForm<PetNameValues>({
     resolver: zodResolver(petNameSchema),
     defaultValues: { name: '' },
   });
-  const name = watch('name');
+  const name = useWatch({ control, name: 'name' });
 
   const onSubmit = handleSubmit(async (values) => {
     try {

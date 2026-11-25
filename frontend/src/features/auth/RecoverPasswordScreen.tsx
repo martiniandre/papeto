@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
 import { api } from '@/api/endpoints';
@@ -18,13 +18,12 @@ export default function RecoverPasswordScreen() {
   const {
     control,
     handleSubmit,
-    watch,
     formState: { errors, isSubmitting },
   } = useForm<RecoverValues>({
     resolver: zodResolver(recoverSchema),
     defaultValues: { email: '' },
   });
-  const email = watch('email');
+  const email = useWatch({ control, name: 'email' });
 
   const onSubmit = handleSubmit(async ({ email: value }) => {
     try {

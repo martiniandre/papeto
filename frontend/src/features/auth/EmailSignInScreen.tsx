@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
@@ -23,13 +23,13 @@ export default function EmailSignInScreen() {
   const {
     control,
     handleSubmit,
-    watch,
     formState: { errors, isSubmitting },
   } = useForm<SignInValues>({
     resolver: zodResolver(signInSchema),
     defaultValues: { email: '', password: '' },
   });
-  const [email, password] = watch(['email', 'password']);
+  const email = useWatch({ control, name: 'email' });
+  const password = useWatch({ control, name: 'password' });
 
   const onSubmit = handleSubmit(async (values) => {
     setServerError(null);

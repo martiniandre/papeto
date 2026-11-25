@@ -4,7 +4,7 @@
 
 ## Definition of done (AGENTS.md)
 
-- [ ] Checks pass for the parts I changed (backend: ruff, mypy, import-linter, pytest; app: typecheck, lint, tests)
+- [ ] Checks pass for the parts I changed (backend: ruff check, ruff format --check, mypy, import-linter, pytest; app: typecheck, lint, tests)
 - [ ] Tests added or updated in this change
 - [ ] No hard rule broken: no calories, macros, weight, BMI or meal scores; no label of food as healthy/unhealthy
 - [ ] No meal photo persisted, logged or cached (no image bytes or URLs in logs)

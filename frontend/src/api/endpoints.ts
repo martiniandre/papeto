@@ -18,6 +18,7 @@ export const api = {
     request<TokenPair>('/auth/register', { method: 'POST', body: input, anonymous: true }),
   login: (input: LoginInput) =>
     request<TokenPair>('/auth/login', { method: 'POST', body: input, anonymous: true }),
+  /** TODO(backend): POST /v1/auth/password/forgot is not in the OpenAPI yet; this call will 404. */
   forgotPassword: (email: string) =>
     request<void>('/auth/password/forgot', { method: 'POST', body: { email }, anonymous: true }),
 

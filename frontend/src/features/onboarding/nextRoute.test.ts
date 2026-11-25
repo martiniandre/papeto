@@ -7,7 +7,7 @@ const consent = (type: ConsentRecord['type'], accepted = true): ConsentRecord =>
   type,
   version: '1.0',
   accepted,
-  accepted_at: accepted ? '2026-11-25T10:00:00Z' : null,
+  recorded_at: '2026-11-25T10:00:00Z',
 });
 
 describe('nextOnboardingRoute', () => {
@@ -20,7 +20,7 @@ describe('nextOnboardingRoute', () => {
 
   it('asks for the pet name next', () => {
     expect(
-      nextOnboardingRoute({ consents: [consent('terms_privacy'), consent('meal_data')] }, { name: null }),
+      nextOnboardingRoute({ consents: [consent('terms_privacy'), consent('meal_data')] }, { name: '' }),
     ).toBe('/(onboarding)/name-pet');
   });
 

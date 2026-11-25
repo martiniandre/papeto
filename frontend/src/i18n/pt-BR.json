@@ -155,8 +155,7 @@
     },
     "empty": "Nenhuma refeição registrada neste período.",
     "emptyCta": "Registrar refeição",
-    "loadMore": "Ver mais",
-    "corrected": "Corrigido por você"
+    "loadMore": "Ver mais"
   },
   "profile": {
     "title": "Perfil",

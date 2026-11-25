@@ -1,133 +1,74 @@
 /**
- * Hand-written API types matching docs/api.md (v1).
- *
- * The backend OpenAPI is not available yet. Once it is, run `npm run api:types`
- * (writes src/api/schema.gen.ts) and replace these aliases with the generated
- * `components['schemas'][...]` types. Shapes marked ASSUMPTION are not spelled
- * out in docs/api.md and must be checked against the real OpenAPI.
+ * API types, derived from the backend OpenAPI (`npm run api:types` -> schema.gen.ts).
+ * Do not hand-write response shapes here: alias the generated schemas so they stay in sync.
  */
+import type { components } from './schema.gen';
 
-export type Mood = 'happy' | 'tired' | 'sleepy' | 'fainted' | 'paused';
+type Schemas = components['schemas'];
+
+export type Mood = Schemas['Mood'];
 export const MOODS: readonly Mood[] = ['happy', 'tired', 'sleepy', 'fainted', 'paused'];
 
-export type PetEvent = 'wake_up' | 'life_lost' | 'celebrate';
+export type PetEvent = Schemas['PetEvent'];
 
-/** ASSUMPTION: the color vocabulary is not defined in docs; the app offers these keys. */
-export type PetColor = 'lilac' | 'mint' | 'peach' | 'sky';
-export const PET_COLORS: readonly PetColor[] = ['lilac', 'mint', 'peach', 'sky'];
+/**
+ * The backend stores the color as a free key (`^[a-z0-9_-]{1,20}$`) and starts every pet with
+ * "default". The app offers PET_COLORS and falls back to a neutral halo for unknown keys.
+ */
+export type PetColor = string;
+export const PET_COLORS = ['lilac', 'mint', 'peach', 'sky'] as const;
+export type OfferedPetColor = (typeof PET_COLORS)[number];
 
-export interface Pet {
-  /** null until the user names the pet (screen 43). ASSUMPTION: nullable. */
-  name: string | null;
-  color: PetColor | null;
-  lives: number;
-  max_lives: number;
-  streak_days: number;
-  points: number;
-  mood: Mood;
-  events: PetEvent[];
-}
+/** GET /pet. The name is never null: new pets start as "Bolinha". */
+export type Pet = Schemas['PetResponse'];
+/** Pet summary returned inside a logged meal (no events). */
+export type PetSummary = Schemas['PetSummary'];
+export type PetUpdate = { name?: string; color?: PetColor };
 
-export interface PetUpdate {
-  name?: string;
-  color?: PetColor;
-}
+export type ConsentType = Schemas['ConsentType'];
+export type ConsentInput = Schemas['ConsentRequest'];
+export type ConsentRecord = Schemas['ConsentOut'];
 
-export type ConsentType = 'terms_privacy' | 'meal_data' | 'analytics';
+export type Plan = Schemas['Plan'];
+export type Me = Schemas['MeResponse'];
 
-export interface ConsentInput {
-  type: ConsentType;
-  version: string;
-  accepted: boolean;
-}
+export type TokenResponse = Schemas['TokenResponse'];
+/** The part of the token response the app persists. */
+export type TokenPair = Pick<TokenResponse, 'access_token' | 'refresh_token'>;
+export type RegisterInput = Schemas['RegisterRequest'];
+export type LoginInput = Schemas['LoginRequest'];
 
-/** ASSUMPTION: shape of a consent inside GET /me. */
-export interface ConsentRecord {
-  type: ConsentType;
-  version: string;
-  accepted: boolean;
-  accepted_at: string | null;
-}
+export type MealType = Schemas['MealType'];
+/** `plate_share` and `new_foods` are empty for free users (Premium view fills them). */
+export type Meal = Schemas['MealOut'];
+export type MealCreated = Schemas['LogMealResponse'];
+export type MealRange = Schemas['MealRange'];
+export type MealPage = Schemas['MealListResponse'];
 
-export type Plan = 'free' | 'premium';
-
-/** ASSUMPTION: docs/api.md only says "profile, plan, consents, timezone". */
-export interface Me {
-  id: string;
-  name: string;
-  email: string;
-  plan: Plan;
-  timezone: string;
-  analytics_opt_out: boolean;
-  consents: ConsentRecord[];
-}
-
-/** ASSUMPTION: token pair returned by register, login, social and refresh. */
-export interface TokenPair {
-  access_token: string;
-  refresh_token: string;
-}
-
-export interface RegisterInput {
-  email: string;
-  password: string;
-  name: string;
-  /** The backend rejects the request unless this is true (422 ADULT_CONFIRMATION_REQUIRED). */
-  adult_confirmed: boolean;
-  /** IANA timezone; the backend defaults to America/Sao_Paulo. */
-  timezone?: string;
-}
-
-export interface LoginInput {
-  email: string;
-  password: string;
-}
-
-export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
-
-/** Vision result fields (docs/api.md) plus record fields (ASSUMPTION: id, created_at, corrected). */
-export interface Meal {
-  id: string;
-  created_at: string;
-  description: string;
-  items: string[];
-  meal_type: MealType;
-  food_groups: string[];
-  item_count: number;
-  colors: string[];
-  confidence: number;
-  corrected: boolean;
-  /** Premium view only. */
-  plate_share?: Record<string, number> | null;
-  /** Premium view only. */
-  new_foods?: string[] | null;
-}
-
-export interface MealCreated {
-  meal: Meal;
-  pet: Pet;
-  events: PetEvent[];
-}
-
-export type MealRange = 'today' | '7d' | '30d';
-
-/** ASSUMPTION: cursor page shape for GET /meals. */
-export interface MealPage {
-  items: Meal[];
-  next_cursor: string | null;
-}
-
+/** Stable error codes from be/app/api/errors.py. Unknown codes are still allowed. */
 export type ApiErrorCode =
+  | 'UNAUTHORIZED'
+  | 'INVALID_TOKEN'
+  | 'INVALID_CREDENTIALS'
+  | 'EMAIL_ALREADY_REGISTERED'
+  | 'ADULT_CONFIRMATION_REQUIRED'
+  | 'INVALID_TIMEZONE'
+  | 'VALIDATION_ERROR'
   | 'MEAL_CONSENT_REQUIRED'
   | 'DAILY_LIMIT_REACHED'
   | 'PHOTO_NOT_READABLE'
+  | 'PHOTO_TOO_LARGE'
   | 'NOT_FOOD'
   | 'VISION_UNAVAILABLE'
   | 'PREMIUM_REQUIRED'
-  | 'INVALID_CREDENTIALS'
-  | 'EMAIL_ALREADY_REGISTERED'
-  | 'TOO_MANY_ATTEMPTS'
-  | 'UNAUTHORIZED'
+  | 'MEAL_NOT_FOUND'
+  | 'PET_NOT_FOUND'
+  | 'PET_ALREADY_PAUSED'
+  | 'PET_NOT_PAUSED'
+  | 'INVALID_CURSOR'
+  | 'NOT_FOUND'
+  | 'METHOD_NOT_ALLOWED'
+  | 'INTERNAL_ERROR'
   | (string & {});
 
 export interface ApiErrorBody {

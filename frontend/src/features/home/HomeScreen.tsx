@@ -8,7 +8,7 @@ import { usePet } from '@/api/queries';
 import { ErrorState } from '@/components/ErrorState';
 import { Hearts } from '@/components/Hearts';
 import { OfflineBanner } from '@/components/OfflineBanner';
-import { Pet, petHalo, DEFAULT_PET_COLOR } from '@/components/Pet';
+import { Pet, haloFor } from '@/components/Pet';
 import { PointsBadge } from '@/components/PointsBadge';
 import { Skeleton } from '@/components/Skeleton';
 import { Button } from '@/components/ui/Button';
@@ -38,7 +38,7 @@ export default function HomeScreen() {
     content = <ErrorState error={pet.error} onRetry={() => void pet.refetch()} />;
   } else {
     const data = pet.data;
-    const name = data.name ?? t('pet.defaultName');
+    const name = data.name;
     const firstDay = data.streak_days === 0 && data.points === 0;
     content = (
       <>
@@ -48,7 +48,7 @@ export default function HomeScreen() {
         </View>
         <View
           className="items-center self-center rounded-pill p-lg"
-          style={{ backgroundColor: petHalo[data.color ?? DEFAULT_PET_COLOR] }}
+          style={{ backgroundColor: haloFor(data.color) }}
         >
           <Pet mood={data.mood} events={data.events} name={name} />
         </View>

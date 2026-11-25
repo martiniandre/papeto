@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { PET_COLORS, type PetColor } from '@/api/types';
 import { usePet, useUpdatePet } from '@/api/queries';
 import { ErrorState } from '@/components/ErrorState';
-import { DEFAULT_PET_COLOR, frontArt, petHalo } from '@/components/Pet';
+import { frontArt, haloFor } from '@/components/Pet';
 import { Screen } from '@/components/Screen';
 import { Skeleton } from '@/components/Skeleton';
 import { Button } from '@/components/ui/Button';
@@ -34,8 +34,8 @@ export default function MeetPetScreen() {
     );
   }
 
-  const name = pet.data.name ?? t('pet.defaultName');
-  const color: PetColor = updatePet.variables?.color ?? pet.data.color ?? DEFAULT_PET_COLOR;
+  const name = pet.data.name;
+  const color: PetColor = updatePet.variables?.color ?? pet.data.color;
 
   return (
     <Screen
@@ -53,7 +53,7 @@ export default function MeetPetScreen() {
       </Text>
       <View
         className="items-center self-center rounded-pill p-lg"
-        style={{ backgroundColor: petHalo[color] }}
+        style={{ backgroundColor: haloFor(color) }}
       >
         <Image
           source={frontArt}
@@ -81,7 +81,7 @@ export default function MeetPetScreen() {
                   ? 'min-h-touch min-w-touch items-center justify-center rounded-pill border-4 border-primary'
                   : 'min-h-touch min-w-touch items-center justify-center rounded-pill border-2 border-input-border'
               }
-              style={{ backgroundColor: petHalo[option], width: 56, height: 56 }}
+              style={{ backgroundColor: haloFor(option), width: 56, height: 56 }}
             >
               {selected ? <Icon name="checkmark" size={24} color={colors.primary} /> : null}
             </Pressable>

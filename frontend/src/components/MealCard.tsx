@@ -9,7 +9,7 @@ import { formatMealTime } from '@/utils/date';
 export function MealCard({ meal }: { meal: Meal }) {
   const { t } = useTranslation();
   const type = t(`meal.types.${meal.meal_type}`);
-  const time = formatMealTime(meal.created_at);
+  const time = formatMealTime(meal.logged_at);
   return (
     <View
       testID="meal-card"
@@ -22,11 +22,6 @@ export function MealCard({ meal }: { meal: Meal }) {
         <Text variant="caption">{time}</Text>
       </View>
       <Text variant="secondary">{meal.description}</Text>
-      {meal.corrected ? (
-        <Text variant="caption" className="self-start rounded-pill border border-input-border px-sm">
-          {t('history.corrected')}
-        </Text>
-      ) : null}
     </View>
   );
 }

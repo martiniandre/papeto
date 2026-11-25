@@ -19,7 +19,7 @@ export default function DailyLimitScreen() {
       {pet.data ? (
         <Pet
           mood={pet.data.mood}
-          name={pet.data.name ?? t('pet.defaultName')}
+          name={pet.data.name}
           size={160}
           className="self-center"
         />

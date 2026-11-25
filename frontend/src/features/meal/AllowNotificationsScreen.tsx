@@ -13,7 +13,7 @@ import { requestNotifications, snoozeNotificationsPrompt } from './notifications
 export default function AllowNotificationsScreen() {
   const { t } = useTranslation();
   const pet = usePet();
-  const name = pet.data?.name ?? t('pet.defaultName');
+  const name = pet.data?.name ?? t("pet.defaultName");
 
   const allow = async () => {
     await requestNotifications().catch(() => false);

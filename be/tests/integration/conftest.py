@@ -1,13 +1,16 @@
-"""Postgres via Testcontainers. Needs a running Docker daemon.
+"""Postgres for the integration suite.
 
-UNVERIFIED on the machine where this was written (no Docker, no Postgres). Run with
-`uv run pytest -m integration` where Docker is available.
+If `TEST_DATABASE_URL` is set (e.g. `postgresql+asyncpg://user:pass@localhost:55432/papeto_test`),
+the suite uses that existing database: migrations run to head and every test truncates all tables,
+so point it only at a disposable test database. Otherwise it starts Postgres 16 via Testcontainers,
+which needs a running Docker daemon.
 """
 
 from __future__ import annotations
 
 import os
 from collections.abc import AsyncIterator, Iterator
+from contextlib import contextmanager
 from pathlib import Path
 
 import pytest
@@ -24,20 +27,34 @@ from tests.support.api_env import ApiEnv, build_env
 BE_DIR = Path(__file__).parents[2]
 
 
-@pytest.fixture(scope="session")
-def database_url() -> Iterator[str]:
-    with PostgresContainer("postgres:16-alpine", driver="asyncpg") as postgres:
-        url = postgres.get_connection_url()
-        previous = os.environ.get("DATABASE_URL")
-        os.environ["DATABASE_URL"] = url  # alembic/env.py reads it
+@contextmanager
+def _migrated(url: str) -> Iterator[str]:
+    previous = os.environ.get("DATABASE_URL")
+    os.environ["DATABASE_URL"] = url  # alembic/env.py reads it
+    try:
         config = Config(str(BE_DIR / "alembic.ini"))
         config.set_main_option("script_location", str(BE_DIR / "alembic"))
         command.upgrade(config, "head")
         yield url
+    finally:
         if previous is None:
             os.environ.pop("DATABASE_URL", None)
         else:
             os.environ["DATABASE_URL"] = previous
+
+
+@pytest.fixture(scope="session")
+def database_url() -> Iterator[str]:
+    external = os.environ.get("TEST_DATABASE_URL")
+    if external:
+        with _migrated(external) as url:
+            yield url
+        return
+    with (
+        PostgresContainer("postgres:16-alpine", driver="asyncpg") as postgres,
+        _migrated(postgres.get_connection_url()) as url,
+    ):
+        yield url
 
 
 @pytest.fixture

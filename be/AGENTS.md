@@ -19,7 +19,7 @@ app/
 tests/
   unit/           domain tests with fake Clock (no DB)
   contract/       one suite per port, run against every adapter
-  integration/    API + Postgres + Redis via Testcontainers
+  integration/    API + Postgres via Testcontainers, or an existing DB via TEST_DATABASE_URL
 ```
 
 ## Rules

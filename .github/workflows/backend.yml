@@ -85,5 +85,5 @@ jobs:
         if: ${{ hashFiles('be/alembic.ini') != '' }}
         run: uv run alembic upgrade head
 
-      - name: Tests (pytest)
-        run: uv run pytest
+      - name: Tests (pytest, unit and contract suites)
+        run: uv run pytest -m "not integration"

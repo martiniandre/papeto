@@ -1,0 +1,257 @@
+{
+  "common": {
+    "continue": "Continuar",
+    "retry": "Tentar de novo",
+    "back": "Voltar",
+    "cancel": "Cancelar",
+    "loading": "Carregando",
+    "selected": "selecionado",
+    "notNow": "Agora não",
+    "openSettings": "Abrir Ajustes",
+    "offline": "Sem conexão. Tentamos de novo quando voltar.",
+    "serverError": "Algo deu errado do nosso lado.",
+    "close": "Fechar"
+  },
+  "brand": {
+    "logoLabel": "Papeto"
+  },
+  "auth": {
+    "signIn": {
+      "title": "Seu bichinho vive dos seus registros",
+      "subtitle": "Fotografe suas refeições e cuide do Bolinha.",
+      "apple": "Entrar com Apple",
+      "google": "Entrar com Google",
+      "email": "Entrar com e-mail",
+      "signingIn": "Entrando…",
+      "failure": "Não deu para entrar. Tente de novo.",
+      "socialUnavailable": "Este jeito de entrar ainda não está disponível. Use o e-mail."
+    },
+    "email": {
+      "title": "Entrar com e-mail",
+      "emailLabel": "E-mail",
+      "passwordLabel": "Senha",
+      "showPassword": "Mostrar senha",
+      "hidePassword": "Esconder senha",
+      "submit": "Entrar",
+      "submitting": "Entrando…",
+      "forgot": "Esqueci minha senha",
+      "createAccount": "Criar conta",
+      "invalidEmail": "Confira o e-mail.",
+      "passwordRequired": "Digite sua senha.",
+      "wrongPassword": "E-mail ou senha não conferem.",
+      "tooManyAttempts": "Muitas tentativas. Espere alguns minutos e tente de novo."
+    },
+    "register": {
+      "title": "Criar conta",
+      "nameLabel": "Seu nome",
+      "nameRequired": "Digite seu nome.",
+      "submit": "Criar conta",
+      "submitting": "Criando conta…",
+      "adultRequired": "Confirme que você tem 18 anos ou mais.",
+      "adultCheckbox": "Tenho 18 anos ou mais.",
+      "passwordRules": "Use pelo menos 8 caracteres, com letras e números.",
+      "weakPassword": "Senha fraca. Use pelo menos 8 caracteres, com letras e números.",
+      "emailTaken": "Este e-mail já tem conta.",
+      "goToSignIn": "Entrar com este e-mail"
+    },
+    "recover": {
+      "title": "Recuperar senha",
+      "body": "Digite seu e-mail e enviamos um link para criar uma nova senha.",
+      "submit": "Enviar link",
+      "submitting": "Enviando…",
+      "sent": "Se houver uma conta com este e-mail, você vai receber um link em instantes."
+    }
+  },
+  "onboarding": {
+    "terms": {
+      "title": "Antes de começar",
+      "body": "O Papeto é para maiores de 18 anos.",
+      "termsCheckbox": "Tenho 18 anos ou mais e aceito os Termos de Uso e a Política de Privacidade.",
+      "mealDataTitle": "Fotos e registros das refeições",
+      "mealDataCheckbox": "Autorizo o Papeto a analisar as fotos das minhas refeições e guardar os registros. As fotos não são guardadas: são descartadas logo após a análise.",
+      "bothRequired": "Marque as duas opções para continuar.",
+      "saving": "Salvando…"
+    },
+    "name": {
+      "title": "Como seu bichinho vai se chamar?",
+      "body": "Ele aparece assim que tiver um nome.",
+      "label": "Nome do bichinho",
+      "placeholder": "Digite um nome",
+      "suggestions": "Sugestões",
+      "suggestionsList": ["Bolinha", "Pipoca", "Biscoito"],
+      "counter": "{{count}} de {{max}} caracteres",
+      "required": "Dê um nome ao seu bichinho.",
+      "tooLong": "Use no máximo 20 caracteres.",
+      "saving": "Salvando…"
+    },
+    "meet": {
+      "title": "Este é {{name}}!",
+      "body": "Escolha uma cor.",
+      "colorLabel": "Cor {{color}}",
+      "colors": {
+        "lilac": "lilás",
+        "mint": "menta",
+        "peach": "pêssego",
+        "sky": "céu"
+      }
+    },
+    "lives": {
+      "title": "Como as vidas funcionam",
+      "start": "{{name}} começa com 2 vidas e pode ter até 4.",
+      "loss": "Um dia sem nenhum registro tira 1 vida.",
+      "gain": "A cada 7 dias seguidos com registro, ganha 1 vida.",
+      "faint": "Sem vidas, {{name}} desmaia. É só registrar uma refeição para ele acordar.",
+      "limit": "Chegar ao limite de fotos do dia nunca tira vida.",
+      "start_cta": "Começar"
+    }
+  },
+  "pet": {
+    "defaultName": "Bolinha",
+    "a11y": "{{name}}, {{mood}}",
+    "mood": {
+      "happy": "feliz",
+      "tired": "cansado",
+      "sleepy": "com sono",
+      "fainted": "desmaiado",
+      "paused": "descansando"
+    },
+    "events": {
+      "celebrate": "{{name}} ganhou uma vida!",
+      "wake_up": "{{name}} acordou!",
+      "life_lost": "{{name}} perdeu uma vida."
+    }
+  },
+  "hearts": {
+    "a11y": "{{lives}} de {{max}} vidas"
+  },
+  "home": {
+    "greeting": "Olá!",
+    "moodMessage": {
+      "happy": "{{name}} está feliz com seu registro de hoje.",
+      "tired": "{{name}} está esperando o registro de hoje.",
+      "sleepy": "{{name}} está com sono. Registre uma refeição para animá-lo.",
+      "fainted": "{{name}} desmaiou. Registre uma refeição para acordá-lo.",
+      "paused": "{{name}} está descansando. As vidas não caem durante a pausa."
+    },
+    "firstDay": "Registre sua primeira refeição para começar.",
+    "streak_one": "{{count}} dia seguido",
+    "streak_other": "{{count}} dias seguidos",
+    "points_one": "{{count}} ponto",
+    "points_other": "{{count}} pontos",
+    "logMeal": "Registrar refeição",
+    "photosUsedUp": "Você usou as 2 fotos de hoje. Amanhã tem mais."
+  },
+  "tabs": {
+    "home": "Início",
+    "history": "Histórico",
+    "profile": "Perfil"
+  },
+  "history": {
+    "title": "Histórico",
+    "ranges": {
+      "today": "Hoje",
+      "7d": "7 dias",
+      "30d": "30 dias"
+    },
+    "empty": "Nenhuma refeição registrada neste período.",
+    "emptyCta": "Registrar refeição",
+    "loadMore": "Ver mais",
+    "corrected": "Corrigido por você"
+  },
+  "profile": {
+    "title": "Perfil",
+    "plan": {
+      "free": "Plano grátis",
+      "premium": "Premium"
+    },
+    "email": "E-mail",
+    "signOut": "Sair"
+  },
+  "meal": {
+    "types": {
+      "breakfast": "Café da manhã",
+      "lunch": "Almoço",
+      "dinner": "Jantar",
+      "snack": "Lanche"
+    },
+    "foodGroups": {
+      "grains": "cereais",
+      "legumes": "leguminosas",
+      "protein": "proteínas",
+      "vegetables": "verduras e legumes",
+      "fruits": "frutas",
+      "dairy": "laticínios"
+    },
+    "permission": {
+      "title": "Vamos usar a câmera",
+      "body": "Para registrar, tire uma foto do prato. A foto é analisada e descartada logo depois.",
+      "allow": "Permitir câmera",
+      "deniedBody": "O acesso à câmera foi negado. Você pode liberar nos Ajustes ou escolher uma foto da galeria.",
+      "gallery": "Escolher da galeria"
+    },
+    "camera": {
+      "title": "Fotografe o prato",
+      "hint": "Enquadre o prato inteiro, com boa luz.",
+      "shutter": "Tirar foto",
+      "flashOn": "Flash ligado",
+      "flashOff": "Flash desligado",
+      "flashToggle": "Flash",
+      "gallery": "Escolher da galeria",
+      "close": "Fechar câmera",
+      "noCamera": "Não encontramos uma câmera. Escolha uma foto da galeria.",
+      "preparing": "Preparando a foto…"
+    },
+    "analyzing": {
+      "title": "Olhando seu prato…",
+      "slow": "Ainda olhando…",
+      "announce": "Analisando a foto do prato.",
+      "announceSlow": "Ainda analisando."
+    },
+    "result": {
+      "title": "Refeição registrada!",
+      "about": "Sobre este prato",
+      "items": "Itens",
+      "groups": "Grupos de alimentos",
+      "lowConfidence": "Não temos certeza de tudo. Confira os itens.",
+      "habits": "Seus hábitos",
+      "habitsLocked": "Seus hábitos, bloqueado, disponível no Premium",
+      "done": "Voltar ao início"
+    },
+    "error": {
+      "title": "Não deu para analisar",
+      "notCounted": "Esta tentativa não conta no limite de fotos do dia.",
+      "not_food": "Parece que esta foto não é de um prato. Tente de novo mostrando o prato.",
+      "unreadable": "A foto ficou escura ou tremida. Tente com mais luz e o celular parado.",
+      "offline": "Sem conexão. Confira a internet e tente de novo.",
+      "ai_error": "Nosso analisador está com problemas agora. Tente de novo em instantes.",
+      "retry": "Tirar outra foto",
+      "gallery": "Escolher da galeria"
+    },
+    "limit": {
+      "title": "Fotos de hoje usadas",
+      "body": "Você usou 2 de 2 fotos hoje.",
+      "reset": "O limite volta à meia-noite.",
+      "lives": "Fique tranquilo: chegar ao limite não tira vida.",
+      "home": "Voltar ao início"
+    },
+    "notifications": {
+      "title": "Quer um lembrete?",
+      "body": "Avisamos quando {{name}} estiver esperando um registro.",
+      "allow": "Permitir notificações"
+    },
+    "consentRequired": "Para analisar fotos, precisamos da sua autorização."
+  },
+  "errors": {
+    "NETWORK_ERROR": "Sem conexão. Tentamos de novo quando voltar.",
+    "UNKNOWN_ERROR": "Algo deu errado do nosso lado.",
+    "INVALID_CREDENTIALS": "E-mail ou senha não conferem.",
+    "EMAIL_ALREADY_REGISTERED": "Este e-mail já tem conta.",
+    "TOO_MANY_ATTEMPTS": "Muitas tentativas. Espere alguns minutos e tente de novo.",
+    "MEAL_CONSENT_REQUIRED": "Para analisar fotos, precisamos da sua autorização.",
+    "DAILY_LIMIT_REACHED": "Você usou as 2 fotos de hoje.",
+    "PHOTO_NOT_READABLE": "A foto ficou escura ou tremida.",
+    "NOT_FOOD": "Parece que esta foto não é de um prato.",
+    "VISION_UNAVAILABLE": "Nosso analisador está com problemas agora.",
+    "PREMIUM_REQUIRED": "Disponível no Premium."
+  }
+}

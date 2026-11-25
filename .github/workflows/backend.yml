@@ -19,7 +19,8 @@ jobs:
     timeout-minutes: 20
 
     # Postgres and Redis run as GitHub service containers (no Docker-in-Docker, no Testcontainers).
-    # Tests and Alembic read the URLs below from the environment (be/app/config.py).
+    # Alembic reads DATABASE_URL from the environment (be/alembic/env.py). The unit suites do not
+    # use these services; tests/integration still starts its own Postgres via Testcontainers.
     services:
       postgres:
         image: postgres:16

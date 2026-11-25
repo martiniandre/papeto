@@ -46,7 +46,7 @@ jobs:
 
     env:
       # CI-only throwaway credentials for the service containers above. Not secrets.
-      DATABASE_URL: postgresql+psycopg://papeto:papeto@localhost:5432/papeto_test
+      DATABASE_URL: postgresql+asyncpg://papeto:papeto@localhost:5432/papeto_test
       REDIS_URL: redis://localhost:6379/0
       UV_PYTHON: "3.12"
 

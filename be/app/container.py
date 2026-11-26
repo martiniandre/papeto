@@ -19,6 +19,7 @@ from app.providers.fake_vision import FakeFoodVision
 from app.providers.local_auth import LocalAuthProvider
 from app.providers.system_clock import SystemClock, UuidGenerator
 from app.services.context import ServiceContext
+from app.vision import VisionPipeline
 
 
 @dataclass(frozen=True)
@@ -32,12 +33,22 @@ class ConfigurationError(RuntimeError):
     pass
 
 
-def _vision(settings: Settings) -> FoodVisionProvider:
+def build_vision_adapter(settings: Settings) -> FoodVisionProvider:
+    """The raw adapter picked by VISION_PROVIDER (default "fake")."""
     if settings.vision_provider == "fake":
         if settings.app_env is AppEnv.PRODUCTION:
             raise ConfigurationError("The fake vision provider must not run in production.")
         return FakeFoodVision()
     raise ConfigurationError(f"Vision provider {settings.vision_provider!r} is not implemented.")
+
+
+def build_vision(settings: Settings) -> VisionPipeline:
+    """Every adapter runs behind the provider-neutral pipeline (resize, retry, validation)."""
+    return VisionPipeline(
+        build_vision_adapter(settings),
+        max_upload_bytes=settings.max_upload_bytes,
+        timeout_seconds=settings.vision_timeout_seconds,
+    )
 
 
 def build_push(settings: Settings) -> PushProvider:
@@ -64,11 +75,12 @@ def build_container(settings: Settings) -> Container:
     redis = Redis.from_url(settings.redis_url)
     clock = SystemClock()
     ids = UuidGenerator()
+    vision = build_vision(settings)
     ctx = ServiceContext(
         uow_factory=SqlUowFactory(engine),
         clock=clock,
         ids=ids,
-        vision=_vision(settings),
+        vision=vision,
         auth=LocalAuthProvider(
             secret=settings.jwt_secret.get_secret_value(),
             clock=clock,

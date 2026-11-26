@@ -16,7 +16,13 @@ from uuid import UUID
 from zoneinfo import ZoneInfo
 
 from app.domain import PointsReason, can_analyze_photo, register_log
-from app.ports import MealType, NotFoodError, PhotoNotReadableError, VisionUnavailableError
+from app.ports import (
+    MealType,
+    NotFoodError,
+    PhotoNotReadableError,
+    PhotoTooLargeError,
+    VisionUnavailableError,
+)
 from app.ports.repositories import MealRecord, MealSource, PointsEventRecord, UnitOfWork
 from app.services.common import (
     build_pet_view,
@@ -31,6 +37,7 @@ from app.services.errors import (
     DailyLimitReached,
     NotFood,
     PhotoNotReadable,
+    PhotoTooLarge,
     ValidationFailed,
     VisionUnavailable,
 )
@@ -100,6 +107,8 @@ async def log_meal(
         vision = await ctx.vision.analyze(image, language)
     except PhotoNotReadableError as exc:
         raise PhotoNotReadable from exc
+    except PhotoTooLargeError as exc:
+        raise PhotoTooLarge from exc
     except NotFoodError as exc:
         raise NotFood from exc
     except VisionUnavailableError as exc:

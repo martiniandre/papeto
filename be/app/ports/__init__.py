@@ -14,7 +14,9 @@ from app.ports.vision import (
     MealType,
     NotFoodError,
     PhotoNotReadableError,
+    PhotoTooLargeError,
     VisionResult,
+    VisionTimeoutError,
     VisionUnavailableError,
 )
 
@@ -31,11 +33,13 @@ __all__ = [
     "NotFoodError",
     "PaymentProvider",
     "PhotoNotReadableError",
+    "PhotoTooLargeError",
     "PushOutcome",
     "PushProvider",
     "PushUnavailableError",
     "StorageProvider",
     "TokenKind",
     "VisionResult",
+    "VisionTimeoutError",
     "VisionUnavailableError",
 ]

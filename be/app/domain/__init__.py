@@ -4,6 +4,7 @@ Public API re-exported here so services import from `app.domain` only.
 """
 
 from app.domain.config import DEFAULT_RULES, PetRulesConfig
+from app.domain.food_groups import FOOD_GROUPS, known_food_groups
 from app.domain.limits import Plan, can_analyze_photo, daily_photo_limit, remaining_photos
 from app.domain.local_days import (
     PauseWindow,
@@ -38,6 +39,7 @@ from app.domain.points import PointsAward, PointsReason, meal_points, points_for
 __all__ = [
     "DEFAULT_PREFS",
     "DEFAULT_RULES",
+    "FOOD_GROUPS",
     "MAX_NOTICES_PER_DAY",
     "NOTICE_COPY",
     "LogOutcome",
@@ -59,6 +61,7 @@ __all__ = [
     "in_quiet_hours",
     "is_paused",
     "is_paused_on",
+    "known_food_groups",
     "local_day",
     "local_day_start",
     "meal_points",

@@ -45,6 +45,7 @@ class Settings(BaseSettings):
     expo_access_token: SecretStr | None = None
 
     max_upload_bytes: int = 8 * 1024 * 1024
+    vision_timeout_seconds: float = 5.0  # per attempt; the pipeline retries once on timeout
     deletion_grace_days: int = 30
     default_timezone: str = "America/Sao_Paulo"
 

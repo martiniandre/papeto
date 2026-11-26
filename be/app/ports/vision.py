@@ -40,11 +40,30 @@ class NotFoodError(Exception):
     """The photo is not food. Does not consume the daily limit."""
 
 
+class PhotoTooLargeError(Exception):
+    """The upload is above the size limit. Checked before any provider call."""
+
+
 class VisionUnavailableError(Exception):
     """Provider error or timeout. Does not consume the daily limit."""
 
 
+class VisionTimeoutError(VisionUnavailableError):
+    """The provider did not answer in time. The pipeline retries once before giving up."""
+
+
 class FoodVisionProvider(Protocol):
+    """Adapters also say who answered, so each meal records its provider, model and prompt."""
+
+    @property
+    def provider_name(self) -> str: ...
+
+    @property
+    def model_version(self) -> str: ...
+
+    @property
+    def prompt_version(self) -> str | None: ...
+
     async def analyze(self, image: bytes, language: str) -> VisionResult:
         """Describe the plate. The image is never stored or logged.
 

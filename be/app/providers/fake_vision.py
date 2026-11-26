@@ -53,6 +53,10 @@ _PLATES: tuple[VisionResult, ...] = (
 
 
 class FakeFoodVision:
+    provider_name = "fake"
+    model_version = "fake-1"
+    prompt_version: str | None = None  # canned answers, no prompt
+
     async def analyze(self, image: bytes, language: str) -> VisionResult:
         if not image:
             raise PhotoNotReadableError

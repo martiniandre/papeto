@@ -125,6 +125,17 @@ forbidden_modules = [
 allow_indirect_imports = false
 
 [[tool.importlinter.contracts]]
+name = "Vision pipeline is provider-neutral"
+type = "forbidden"
+source_modules = ["app.vision"]
+forbidden_modules = [
+    "fastapi", "starlette", "sqlalchemy", "alembic", "asyncpg", "psycopg", "httpx", "redis",
+    "arq", "stripe", "jwt", "argon2",
+    "app.api", "app.db", "app.providers", "app.services", "app.worker", "app.container", "app.main",
+]
+allow_indirect_imports = false
+
+[[tool.importlinter.contracts]]
 name = "API does not touch persistence, providers or SDKs"
 type = "forbidden"
 source_modules = ["app.api"]

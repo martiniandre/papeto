@@ -13,6 +13,7 @@ from fastapi import FastAPI
 from app.config import Settings
 from app.container import Container
 from app.main import create_app
+from app.ports import FoodVisionProvider
 from app.ports.repositories import SubscriptionRecord, UnitOfWork
 from app.providers.fake_clock import FakeClock, SequentialIdGenerator
 from app.providers.fake_misc import NoopAnalytics, NoopErrorReporter, RecordingEmail
@@ -55,14 +56,19 @@ class ApiEnv:
         return user.id
 
 
-def build_env(uow_factory: UowFactory, *, max_upload_bytes: int = 1024 * 1024) -> ApiEnv:
+def build_env(
+    uow_factory: UowFactory,
+    *,
+    max_upload_bytes: int = 1024 * 1024,
+    vision: FoodVisionProvider | None = None,
+) -> ApiEnv:
     clock = FakeClock(START)
     ids = SequentialIdGenerator()
     ctx = ServiceContext(
         uow_factory=uow_factory,
         clock=clock,
         ids=ids,
-        vision=FakeFoodVision(),
+        vision=vision or FakeFoodVision(),
         auth=LocalAuthProvider(
             secret=JWT_SECRET,
             clock=clock,

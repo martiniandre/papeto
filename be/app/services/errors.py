@@ -57,6 +57,11 @@ class PhotoNotReadable(ServiceError):
     message = "The photo could not be read. Try again."
 
 
+class PhotoTooLarge(ServiceError):
+    code = "PHOTO_TOO_LARGE"
+    message = "The photo is too large."
+
+
 class NotFood(ServiceError):
     code = "NOT_FOOD"
     message = "No food was found in the photo."

@@ -20,13 +20,13 @@ export const PET_COLORS = ['lilac', 'mint', 'peach', 'sky'] as const;
 export type OfferedPetColor = (typeof PET_COLORS)[number];
 
 /**
- * GET /pet. A new pet has `name: null` until the user names it (screen 43).
- * TODO(api-types): hand-edited from `string`; remove this override once schema.gen.ts is regenerated
- * from the backend that returns `name: string | null`.
+ * GET /pet. A new pet has `name: null` until the user names it (screen 43); the generated type covers it.
+ * `support_hint` (risk pattern, off by default on the server) is being added by the backend worker and is not in
+ * the generated schema yet: drop the intersection once `npm run api:types` includes it.
  */
-export type Pet = Omit<Schemas['PetResponse'], 'name'> & { name: string | null };
+export type Pet = Schemas['PetResponse'] & { support_hint?: boolean };
 /** Pet summary returned inside a logged meal (no events). */
-export type PetSummary = Omit<Schemas['PetSummary'], 'name'> & { name: string | null };
+export type PetSummary = Schemas['PetSummary'];
 export type PetUpdate = { name?: string; color?: PetColor };
 
 export type ConsentType = Schemas['ConsentType'];
@@ -37,6 +37,11 @@ export type DataExport = Schemas['ExportResponse'];
 
 export type Plan = Schemas['Plan'];
 export type Me = Schemas['MeResponse'];
+export type MeUpdate = Schemas['MePatch'];
+export type NotificationPrefs = Schemas['NotificationsOut'];
+export type NotificationPrefsPatch = Schemas['NotificationsPatch'];
+export type PushTokenInput = Schemas['PushTokenRequest'];
+export type ManualMealInput = Schemas['ManualMealRequest'];
 
 export type TokenResponse = Schemas['TokenResponse'];
 /** The part of the token response the app persists. */
@@ -73,6 +78,7 @@ export type ApiErrorCode =
   | 'PET_ALREADY_PAUSED'
   | 'PET_NOT_PAUSED'
   | 'INVALID_CURSOR'
+  | 'INVALID_RESET_TOKEN'
   | 'NOT_FOUND'
   | 'METHOD_NOT_ALLOWED'
   | 'INTERNAL_ERROR'

@@ -4,7 +4,7 @@ import { isApiError } from './client';
 import { usePetAlertStore } from '@/stores/petAlerts';
 
 import { api } from './endpoints';
-import type { Meal, MealPatch, MealRange, Pet, PetUpdate } from './types';
+import type { Me, Meal, MealPatch, MealRange, MeUpdate, Pet, PetUpdate } from './types';
 
 export const queryKeys = {
   me: ['me'] as const,
@@ -28,6 +28,15 @@ export function createQueryClient(): QueryClient {
 }
 
 export const useMe = (enabled = true) => useQuery({ queryKey: queryKeys.me, queryFn: api.getMe, enabled });
+
+/** PATCH /me (analytics opt-out, notification preferences). The answer is the new profile. */
+export function useUpdateMe() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (input: MeUpdate) => api.updateMe(input),
+    onSuccess: (me: Me) => client.setQueryData(queryKeys.me, me),
+  });
+}
 
 /** `life_lost` is returned once by the API, so it is remembered here before the next refetch replaces it. */
 async function fetchPet(): Promise<Pet> {

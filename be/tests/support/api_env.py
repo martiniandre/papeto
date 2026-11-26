@@ -15,7 +15,7 @@ from app.container import Container
 from app.main import create_app
 from app.ports.repositories import SubscriptionRecord, UnitOfWork
 from app.providers.fake_clock import FakeClock, SequentialIdGenerator
-from app.providers.fake_misc import NoopAnalytics, NoopErrorReporter
+from app.providers.fake_misc import NoopAnalytics, NoopErrorReporter, RecordingEmail
 from app.providers.fake_vision import FakeFoodVision
 from app.providers.local_auth import LocalAuthProvider
 from app.services.context import ServiceContext
@@ -72,6 +72,7 @@ def build_env(uow_factory: UowFactory, *, max_upload_bytes: int = 1024 * 1024) -
         ),
         analytics=NoopAnalytics(),
         error_reporter=NoopErrorReporter(),
+        email=RecordingEmail(),
     )
 
     async def readiness() -> dict[str, bool]:

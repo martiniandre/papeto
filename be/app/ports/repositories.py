@@ -103,6 +103,18 @@ class PointsEventRecord:
 
 
 @dataclass(frozen=True, slots=True)
+class PasswordResetRecord:
+    """A single-use reset token. Only its SHA-256 hash is stored, never the token itself."""
+
+    id: UUID
+    user_id: UUID
+    token_hash: str
+    created_at: datetime
+    expires_at: datetime
+    used_at: datetime | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class PushTokenRecord:
     id: UUID
     user_id: UUID
@@ -207,6 +219,18 @@ class UsageRepository(Protocol):
     async def logged_days(self, user_id: UUID) -> set[date]: ...
 
 
+class PasswordResetRepository(Protocol):
+    async def add(self, reset: PasswordResetRecord) -> None: ...
+    async def get_by_hash(self, token_hash: str) -> PasswordResetRecord | None: ...
+    async def count_since(self, user_id: UUID, since: datetime) -> int:
+        """Tokens created for the user at or after `since` (used ones included)."""
+        ...
+
+    async def use_all(self, user_id: UUID, now: datetime) -> None:
+        """Set `used_at = now` on every unused token of the user."""
+        ...
+
+
 class PushTokenRepository(Protocol):
     async def upsert(self, token: PushTokenRecord) -> None: ...
     async def list_for_user(self, user_id: UUID) -> list[PushTokenRecord]: ...
@@ -240,6 +264,8 @@ class UnitOfWork(Protocol):
     def points(self) -> PointsRepository: ...
     @property
     def usage(self) -> UsageRepository: ...
+    @property
+    def password_resets(self) -> PasswordResetRepository: ...
     @property
     def push_tokens(self) -> PushTokenRepository: ...
     @property

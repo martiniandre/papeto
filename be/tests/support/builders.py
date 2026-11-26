@@ -10,7 +10,7 @@ from argon2 import PasswordHasher
 
 from app.ports.repositories import ConsentType, SubscriptionRecord, UnitOfWork
 from app.providers.fake_clock import FakeClock, SequentialIdGenerator
-from app.providers.fake_misc import NoopAnalytics, NoopErrorReporter
+from app.providers.fake_misc import NoopAnalytics, NoopErrorReporter, RecordingEmail
 from app.providers.fake_vision import FakeFoodVision
 from app.providers.local_auth import LocalAuthProvider
 from app.services.auth import register
@@ -56,6 +56,7 @@ def make_world(uow_factory: MemoryUowFactory | None = None) -> World:
         ),
         analytics=NoopAnalytics(),
         error_reporter=NoopErrorReporter(),
+        email=RecordingEmail(),
     )
     return World(ctx=ctx, clock=clock, factory=factory)
 

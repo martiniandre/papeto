@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import (
 from app.db.repositories import (
     SqlConsentRepository,
     SqlMealRepository,
+    SqlPasswordResetRepository,
     SqlPauseRepository,
     SqlPaymentEventRepository,
     SqlPetRepository,
@@ -47,6 +48,7 @@ class SqlUnitOfWork:
         self.meals = SqlMealRepository(session)
         self.points = SqlPointsRepository(session)
         self.usage = SqlUsageRepository(session)
+        self.password_resets = SqlPasswordResetRepository(session)
         self.push_tokens = SqlPushTokenRepository(session)
         self.subscriptions = SqlSubscriptionRepository(session)
         self.payment_events = SqlPaymentEventRepository(session)

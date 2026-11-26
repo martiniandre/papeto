@@ -16,6 +16,7 @@ from app.ports.repositories import (
     DuplicateEmailError,
     MealCursor,
     MealRecord,
+    PasswordResetRecord,
     PauseRecord,
     PaymentEventRecord,
     PetRecord,
@@ -35,6 +36,7 @@ class MemoryStore:
     meals: dict[UUID, MealRecord] = field(default_factory=dict)
     points: list[PointsEventRecord] = field(default_factory=list)
     usage: dict[tuple[UUID, date], int] = field(default_factory=dict)
+    password_resets: dict[str, PasswordResetRecord] = field(default_factory=dict)  # by hash
     push_tokens: dict[str, PushTokenRecord] = field(default_factory=dict)
     subscriptions: dict[UUID, SubscriptionRecord] = field(default_factory=dict)
     payment_events: dict[str, PaymentEventRecord] = field(default_factory=dict)
@@ -185,6 +187,29 @@ class MemUsage:
         return {day for (uid, day), n in self.s.usage.items() if uid == user_id and n > 0}
 
 
+class MemPasswordResets:
+    def __init__(self, s: MemoryStore) -> None:
+        self.s = s
+
+    async def add(self, reset: PasswordResetRecord) -> None:
+        self.s.password_resets[reset.token_hash] = reset
+
+    async def get_by_hash(self, token_hash: str) -> PasswordResetRecord | None:
+        return self.s.password_resets.get(token_hash)
+
+    async def count_since(self, user_id: UUID, since: datetime) -> int:
+        return sum(
+            1
+            for r in self.s.password_resets.values()
+            if r.user_id == user_id and r.created_at >= since
+        )
+
+    async def use_all(self, user_id: UUID, now: datetime) -> None:
+        for key, r in list(self.s.password_resets.items()):
+            if r.user_id == user_id and r.used_at is None:
+                self.s.password_resets[key] = replace(r, used_at=now)
+
+
 class MemPushTokens:
     def __init__(self, s: MemoryStore) -> None:
         self.s = s
@@ -228,6 +253,7 @@ class MemoryUnitOfWork:
         self.meals = MemMeals(store)
         self.points = MemPoints(store)
         self.usage = MemUsage(store)
+        self.password_resets = MemPasswordResets(store)
         self.push_tokens = MemPushTokens(store)
         self.subscriptions = MemSubscriptions(store)
         self.payment_events = MemPaymentEvents(store)

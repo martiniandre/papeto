@@ -6,9 +6,11 @@ Subclasses provide the `env` fixture. These classes are not collected directly (
 from __future__ import annotations
 
 from typing import Any
+from urllib.parse import parse_qs, urlparse
 
 import pytest
 
+from app.providers.fake_misc import RecordingEmail
 from tests.support.api_env import ApiEnv
 from tests.support.builders import PHOTO
 
@@ -158,6 +160,53 @@ class ApiCases:
             },
         )
         assert_error(bad_zone, 422, "INVALID_TIMEZONE")
+
+    async def test_forgot_password_answers_the_same_for_known_and_unknown_emails(
+        self, env: ApiEnv
+    ) -> None:
+        await signup(env)
+        known = await env.client.post("/v1/auth/password/forgot", json={"email": "ana@example.com"})
+        unknown = await env.client.post(
+            "/v1/auth/password/forgot", json={"email": "nobody@example.com"}
+        )
+        assert known.status_code == unknown.status_code == 202
+        assert known.json() == unknown.json() == {"status": "accepted"}
+        assert_error(
+            await env.client.post("/v1/auth/password/forgot", json={"email": "nope"}),
+            422,
+            "VALIDATION_ERROR",
+        )
+
+    async def test_reset_password_with_emailed_token(self, env: ApiEnv) -> None:
+        await signup(env)
+        await env.client.post("/v1/auth/password/forgot", json={"email": "ana@example.com"})
+        outbox = env.ctx.email
+        assert isinstance(outbox, RecordingEmail)
+        [(_, _, body)] = outbox.sent
+        link = next(line for line in body.splitlines() if "token=" in line)
+        token = parse_qs(urlparse(link.strip()).query)["token"][0]
+
+        new_password = "brand-new-pass-2"
+        short = await env.client.post(
+            "/v1/auth/password/reset", json={"token": token, "password": "short"}
+        )
+        assert_error(short, 422, "VALIDATION_ERROR")
+        done = await env.client.post(
+            "/v1/auth/password/reset", json={"token": token, "password": new_password}
+        )
+        assert done.status_code == 204
+        again = await env.client.post(
+            "/v1/auth/password/reset", json={"token": token, "password": new_password}
+        )
+        assert_error(again, 400, "INVALID_RESET_TOKEN")
+        login = await env.client.post(
+            "/v1/auth/login", json={"email": "ana@example.com", "password": new_password}
+        )
+        assert login.status_code == 200
+        old = await env.client.post(
+            "/v1/auth/login", json={"email": "ana@example.com", "password": PASSWORD}
+        )
+        assert_error(old, 401, "INVALID_CREDENTIALS")
 
     async def test_meal_endpoints_require_meal_consent(self, env: ApiEnv) -> None:
         headers = await signup(env, meal_consent=False)

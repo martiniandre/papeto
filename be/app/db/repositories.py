@@ -18,6 +18,7 @@ from app.ports.repositories import (
     DuplicateEmailError,
     MealCursor,
     MealRecord,
+    PasswordResetRecord,
     PauseRecord,
     PaymentEventRecord,
     PetRecord,
@@ -412,6 +413,62 @@ class SqlUsageRepository:
             )
         )
         return set(rows.scalars())
+
+
+def _reset(row: m.PasswordResetModel) -> PasswordResetRecord:
+    return PasswordResetRecord(
+        id=row.id,
+        user_id=row.user_id,
+        token_hash=row.token_hash,
+        created_at=row.created_at,
+        expires_at=row.expires_at,
+        used_at=row.used_at,
+    )
+
+
+class SqlPasswordResetRepository:
+    def __init__(self, session: AsyncSession) -> None:
+        self._s = session
+
+    async def add(self, reset: PasswordResetRecord) -> None:
+        self._s.add(
+            m.PasswordResetModel(
+                id=reset.id,
+                user_id=reset.user_id,
+                token_hash=reset.token_hash,
+                created_at=reset.created_at,
+                expires_at=reset.expires_at,
+                used_at=reset.used_at,
+            )
+        )
+        await self._s.flush()
+
+    async def get_by_hash(self, token_hash: str) -> PasswordResetRecord | None:
+        row = await self._s.scalar(
+            select(m.PasswordResetModel).where(m.PasswordResetModel.token_hash == token_hash)
+        )
+        return _reset(row) if row else None
+
+    async def count_since(self, user_id: UUID, since: datetime) -> int:
+        value = await self._s.scalar(
+            select(func.count())
+            .select_from(m.PasswordResetModel)
+            .where(
+                m.PasswordResetModel.user_id == user_id,
+                m.PasswordResetModel.created_at >= since,
+            )
+        )
+        return int(value or 0)
+
+    async def use_all(self, user_id: UUID, now: datetime) -> None:
+        await self._s.execute(
+            update(m.PasswordResetModel)
+            .where(
+                m.PasswordResetModel.user_id == user_id,
+                m.PasswordResetModel.used_at.is_(None),
+            )
+            .values(used_at=now)
+        )
 
 
 class SqlPushTokenRepository:

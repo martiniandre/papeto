@@ -12,8 +12,8 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from app.config import AppEnv, Settings
 from app.db.session import SqlUowFactory, create_engine
-from app.ports import FoodVisionProvider
-from app.providers.fake_misc import NoopAnalytics, NoopErrorReporter
+from app.ports import EmailProvider, FoodVisionProvider
+from app.providers.fake_misc import NoopAnalytics, NoopErrorReporter, RecordingEmail
 from app.providers.fake_vision import FakeFoodVision
 from app.providers.local_auth import LocalAuthProvider
 from app.providers.system_clock import SystemClock, UuidGenerator
@@ -39,6 +39,14 @@ def _vision(settings: Settings) -> FoodVisionProvider:
     raise ConfigurationError(f"Vision provider {settings.vision_provider!r} is not implemented.")
 
 
+def _email(settings: Settings) -> EmailProvider:
+    if settings.email_provider == "fake":
+        if settings.app_env is AppEnv.PRODUCTION:
+            raise ConfigurationError("The fake email provider must not run in production.")
+        return RecordingEmail()  # keeps messages in memory; nothing is sent
+    raise ConfigurationError(f"Email provider {settings.email_provider!r} is not implemented.")
+
+
 def build_container(settings: Settings) -> Container:
     engine: AsyncEngine = create_engine(settings.database_url)
     redis = Redis.from_url(settings.redis_url)
@@ -59,8 +67,12 @@ def build_container(settings: Settings) -> Container:
         ),
         analytics=NoopAnalytics(),
         error_reporter=NoopErrorReporter(),
+        email=_email(settings),
         deletion_grace_days=settings.deletion_grace_days,
         default_timezone=settings.default_timezone,
+        password_reset_url=settings.password_reset_url,
+        password_reset_minutes=settings.password_reset_minutes,
+        password_reset_max_per_hour=settings.password_reset_max_per_hour,
     )
 
     async def readiness() -> dict[str, bool]:

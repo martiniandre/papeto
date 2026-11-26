@@ -132,6 +132,20 @@ class PointsEventModel(Base):
     created_at: Mapped[datetime] = _ts()
 
 
+class PasswordResetModel(Base):
+    """Single-use password reset tokens. Only the SHA-256 hash of the token is stored."""
+
+    __tablename__ = "password_resets"
+    __table_args__ = (Index("ix_password_resets_user_created", "user_id", "created_at"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    created_at: Mapped[datetime] = _ts()
+    expires_at: Mapped[datetime] = _ts()
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
 class PushTokenModel(Base):
     __tablename__ = "push_tokens"
 

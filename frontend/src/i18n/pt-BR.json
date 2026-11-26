@@ -60,6 +60,17 @@
       "submit": "Enviar link",
       "submitting": "Enviando…",
       "sent": "Se houver uma conta com este e-mail, você vai receber um link em instantes."
+    },
+    "reset": {
+      "title": "Nova senha",
+      "body": "Escolha uma senha nova para entrar no Papeto.",
+      "passwordLabel": "Nova senha",
+      "submit": "Salvar nova senha",
+      "submitting": "Salvando…",
+      "doneTitle": "Senha atualizada",
+      "done": "Pronto! Entre com a sua nova senha.",
+      "toSignIn": "Entrar",
+      "requestNew": "Pedir um novo link"
     }
   },
   "onboarding": {
@@ -179,6 +190,8 @@
     "premiumTag": "Premium",
     "timezone": "Fuso horário",
     "export": "Exportar meus dados",
+    "privacy": "Privacidade",
+    "support": "Apoio",
     "deleteAccount": "Excluir conta",
     "avatarLabel": "Foto de perfil de {{name}}"
   },
@@ -196,10 +209,39 @@
       "sleepy": "Quando o pet ficar com sono",
       "weekly": "Resumo semanal",
       "quiet": "Não incomodar",
-      "quietRange": "22:00 às 08:00",
+      "quietRange": "{{start}} às {{end}}",
+      "quietOff": "Desligado",
       "footnote": "No máximo 2 avisos por dia, sem culpa e sem falar de comida \"certa\" ou \"errada\".",
       "deniedTitle": "Os avisos estão bloqueados no seu celular.",
       "deniedBody": "Libere as notificações do Papeto nos Ajustes para receber os lembretes.",
+      "saveError": "Não deu para salvar a mudança. Tente de novo."
+    },
+    "privacy": {
+      "title": "Privacidade",
+      "mealTitle": "Fotos e registros das refeições",
+      "mealOn": "Autorização ativa",
+      "mealOff": "Autorização revogada",
+      "mealBody": "Com a autorização, o Papeto analisa a foto do prato e guarda o registro. A foto nunca é guardada.",
+      "revoke": "Revogar autorização",
+      "revokeTitle": "Revogar a autorização?",
+      "revokeEffect": "Sem ela, o Papeto para de analisar fotos e de registrar refeições, e o bichinho não recebe novos registros.",
+      "revokeKeeps": "Seus registros continuam guardados até você apagá-los. Antes de revogar, você pode exportar ou apagar os registros abaixo.",
+      "revokeConfirm": "Revogar autorização",
+      "revokeKeep": "Manter autorização",
+      "revoked": "Autorização revogada. Você pode exportar ou apagar seus registros de refeição abaixo.",
+      "allowAgain": "Autorizar de novo",
+      "yourRecords": "Seus registros",
+      "recordsBody": "Você pode levar uma cópia ou apagar só os registros de refeição. A conta e o bichinho continuam.",
+      "deleteMeals": "Apagar meus registros de refeição",
+      "deleteMealsTitle": "Apagar todos os registros de refeição?",
+      "deleteMealsBody": "Isso não pode ser desfeito. Sua conta, seu bichinho e seus pontos continuam.",
+      "deleteMealsConfirm": "Apagar registros",
+      "mealsDeleted": "Registros de refeição apagados.",
+      "deleteMealsError": "Não deu para apagar os registros. Tente de novo.",
+      "analytics": "Estatísticas de uso",
+      "analyticsBody": "Dados anônimos para melhorar o app, sem nome e sem e-mail.",
+      "terms": "Termos de Uso",
+      "policy": "Política de Privacidade",
       "saveError": "Não deu para salvar a mudança. Tente de novo."
     },
     "export": {
@@ -284,6 +326,13 @@
       "items": "Itens",
       "groups": "Grupos de alimentos",
       "lowConfidence": "Não temos certeza de tudo. Confira os itens.",
+      "groupsTitle": "Grupos no prato",
+      "free": "Grátis",
+      "groupPresent": "no prato",
+      "groupAbsent": "fora do prato",
+      "confidence": "Confiança da leitura: {{level}}",
+      "confidenceLevel": { "high": "alta", "medium": "média", "low": "baixa" },
+      "unlock": "Desbloquear seus hábitos",
       "habits": "Seus hábitos",
       "habitsLocked": "Seus hábitos, bloqueado, disponível no Premium",
       "done": "Voltar ao início"
@@ -296,7 +345,27 @@
       "offline": "Sem conexão. Confira a internet e tente de novo.",
       "ai_error": "Nosso analisador está com problemas agora. Tente de novo em instantes.",
       "retry": "Tirar outra foto",
-      "gallery": "Escolher da galeria"
+      "gallery": "Escolher da galeria",
+      "manual": "Escolher os alimentos",
+      "sendPending": "Enviar a foto agora",
+      "queueTitle": "Sem conexão",
+      "queueBody": "Guardamos a foto só na memória e enviamos quando a internet voltar. Se você fechar o app, ela se perde."
+    },
+    "manual": {
+      "title": "Escolher os alimentos",
+      "body": "Sem foto: marque o que tinha no prato e o tipo da refeição para registrar.",
+      "typeLabel": "Tipo da refeição",
+      "commonLabel": "Alimentos comuns",
+      "common": ["Arroz", "Feijão", "Salada", "Frango", "Carne", "Ovo", "Legumes", "Fruta", "Pão", "Macarrão", "Peixe", "Iogurte"],
+      "selectedLabel": "Escolhidos",
+      "noneSelected": "Escolha pelo menos um alimento.",
+      "addLabel": "Outro alimento",
+      "addPlaceholder": "Ex.: mandioca",
+      "add": "Adicionar alimento",
+      "removeItem": "Remover {{item}}",
+      "submit": "Registrar refeição",
+      "submitting": "Registrando…",
+      "saveError": "Não deu para registrar agora. Tente de novo."
     },
     "limit": {
       "title": "Fotos de hoje usadas",
@@ -354,6 +423,19 @@
     },
     "consentRequired": "Para analisar fotos, precisamos da sua autorização."
   },
+  "support": {
+    "title": "Apoio",
+    "notice": "O Papeto não substitui médico ou nutricionista. Ele só ajuda você a manter o hábito de registrar.",
+    "pathTitle": "Quer conversar com alguém?",
+    "pathBody": "O CVV (Centro de Valorização da Vida) atende de graça, a qualquer hora, pelo telefone 188 e pelo chat no site.",
+    "call": "Ligar para o CVV (188)",
+    "callLabel": "Ligar para o CVV, telefone 188",
+    "site": "Abrir cvv.org.br",
+    "siteLabel": "Abrir o site do CVV, cvv.org.br",
+    "homeTitle": "Tudo bem por aí?",
+    "homeBody": "Sem cobrança: {{name}} espera você com carinho. Se quiser conversar com alguém, o CVV atende de graça, 24 horas, pelo 188.",
+    "homeMore": "Ver mais apoio"
+  },
   "petAlert": {
     "lifeLost": {
       "title": "{{name}} perdeu uma vida",
@@ -391,6 +473,7 @@
     "NOT_FOOD": "Parece que esta foto não é de um prato.",
     "VISION_UNAVAILABLE": "Nosso analisador está com problemas agora.",
     "PREMIUM_REQUIRED": "Disponível no Premium.",
-    "MEAL_NOT_FOUND": "Esta refeição não está mais no histórico."
+    "MEAL_NOT_FOUND": "Esta refeição não está mais no histórico.",
+    "INVALID_RESET_TOKEN": "Este link não vale mais. Peça um novo link para criar a senha."
   }
 }

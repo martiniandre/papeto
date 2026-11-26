@@ -21,7 +21,7 @@ import { useNotificationSettings } from './useNotificationSettings';
 export default function NotificationsSettingsScreen() {
   const { t } = useTranslation();
   const pet = usePet();
-  const { settings, isLoading, isError, isSaving, update, retry } = useNotificationSettings();
+  const { settings, isLoading, isError, isSaving, saveFailed, update, retry } = useNotificationSettings();
   const [denied, setDenied] = useState(false);
   const name = pet.data?.name ?? t('pet.defaultName');
 
@@ -46,7 +46,7 @@ export default function NotificationsSettingsScreen() {
     </View>
   );
 
-  if (isLoading) {
+  if (isLoading || (!settings && !isError)) {
     return (
       <Screen>
         {header}
@@ -54,7 +54,7 @@ export default function NotificationsSettingsScreen() {
       </Screen>
     );
   }
-  if (isError) {
+  if (isError || !settings) {
     return (
       <Screen>
         {header}
@@ -124,12 +124,21 @@ export default function NotificationsSettingsScreen() {
         <ToggleRow
           testID="toggle-quiet"
           label={t('account.notifications.quiet')}
-          detail={t('account.notifications.quietRange')}
+          detail={
+            settings.quietHours
+              ? t('account.notifications.quietRange', { start: settings.quietStart, end: settings.quietEnd })
+              : t('account.notifications.quietOff')
+          }
           value={settings.quietHours}
           disabled={isSaving}
           onChange={(value) => update({ quietHours: value })}
         />
       </View>
+      {saveFailed ? (
+        <Text accessibilityRole="alert" className="font-semibold">
+          {t('account.notifications.saveError')}
+        </Text>
+      ) : null}
       <Text variant="secondary">{t('account.notifications.footnote')}</Text>
     </Screen>
   );

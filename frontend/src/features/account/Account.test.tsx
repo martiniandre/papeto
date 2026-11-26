@@ -1,4 +1,4 @@
-import { act, fireEvent, screen } from '@testing-library/react-native';
+import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
 import * as Notifications from 'expo-notifications';
 import { router } from 'expo-router';
 import { Linking, Share } from 'react-native';
@@ -15,10 +15,9 @@ import AccountDeletedScreen from './AccountDeletedScreen';
 import DeleteAccountScreen from './DeleteAccountScreen';
 import ExportDataScreen from './ExportDataScreen';
 import NotificationsSettingsScreen from './NotificationsSettingsScreen';
-import { resetNotificationSettings } from './useNotificationSettings';
 
 jest.mock('@/api/endpoints', () => ({
-  api: { getMe: jest.fn(), getPet: jest.fn(), deleteAccount: jest.fn(), exportData: jest.fn() },
+  api: { getMe: jest.fn(), updateMe: jest.fn(), getPet: jest.fn(), deleteAccount: jest.fn(), exportData: jest.fn() },
 }));
 jest.mock('expo-notifications', () => ({ getPermissionsAsync: jest.fn() }));
 jest.setTimeout(30000);
@@ -30,6 +29,13 @@ const me = (overrides: Partial<Me> = {}): Me => ({
   timezone: 'America/Sao_Paulo',
   plan: 'free',
   analytics_opt_out: false,
+  notifications: {
+    meal_reminder: true,
+    sleepy_notice: true,
+    weekly_summary: false,
+    quiet_hours_start: '22:00',
+    quiet_hours_end: '08:00',
+  },
   consents: [],
   deletion_scheduled_for: null,
   ...overrides,
@@ -38,7 +44,6 @@ const me = (overrides: Partial<Me> = {}): Me => ({
 describe('profile flow (screens 8, 27, 36, 35, 41)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    resetNotificationSettings();
     (api.getMe as jest.Mock).mockResolvedValue(me());
     (api.getPet as jest.Mock).mockResolvedValue(makePet());
     (Notifications.getPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'granted' });
@@ -60,6 +65,8 @@ describe('profile flow (screens 8, 27, 36, 35, 41)', () => {
       expect(screen.getByRole('button', { name: 'Avisos do pet, Ligados' })).toBeOnTheScreen();
       expect(screen.getByRole('button', { name: 'Pausar o pet, Premium' })).toBeOnTheScreen();
       expect(screen.getByRole('button', { name: 'Exportar meus dados' })).toBeOnTheScreen();
+      expect(screen.getByRole('button', { name: 'Privacidade' })).toBeOnTheScreen();
+      expect(screen.getByRole('button', { name: 'Apoio' })).toBeOnTheScreen();
       expect(screen.getByRole('button', { name: 'Sair' })).toBeOnTheScreen();
       expect(screen.getByRole('button', { name: 'Excluir conta' })).toBeOnTheScreen();
     });
@@ -72,6 +79,10 @@ describe('profile flow (screens 8, 27, 36, 35, 41)', () => {
       expect(router.push).toHaveBeenLastCalledWith('/account/export');
       await fireEvent.press(screen.getByTestId('delete-account-link'));
       expect(router.push).toHaveBeenLastCalledWith('/account/delete');
+      await fireEvent.press(screen.getByTestId('row-privacy'));
+      expect(router.push).toHaveBeenLastCalledWith('/account/privacy');
+      await fireEvent.press(screen.getByTestId('row-support'));
+      expect(router.push).toHaveBeenLastCalledWith('/account/support');
       await fireEvent.press(screen.getByTestId('row-pause'));
       expect(router.push).toHaveBeenLastCalledWith('/premium');
     });
@@ -84,15 +95,49 @@ describe('profile flow (screens 8, 27, 36, 35, 41)', () => {
   });
 
   describe('<NotificationsSettingsScreen /> (27)', () => {
-    it('exposes toggles as switches with their state, and flips them', async () => {
+    it('exposes toggles as switches with their state and saves a change with PATCH /me', async () => {
+      (api.updateMe as jest.Mock).mockResolvedValue(
+        me({
+          notifications: {
+            meal_reminder: true,
+            sleepy_notice: true,
+            weekly_summary: true,
+            quiet_hours_start: '22:00',
+            quiet_hours_end: '08:00',
+          },
+        }),
+      );
       await renderWithProviders(<NotificationsSettingsScreen />);
       const weekly = await screen.findByRole('switch', { name: 'Resumo semanal' });
       expect(weekly).not.toBeChecked();
       await fireEvent.press(weekly);
-      expect(screen.getByRole('switch', { name: 'Resumo semanal' })).toBeChecked();
+      expect(api.updateMe).toHaveBeenCalledWith({ notifications: { weekly_summary: true } });
+      await waitFor(() => expect(screen.getByRole('switch', { name: 'Resumo semanal' })).toBeChecked());
       expect(screen.getByRole('switch', { name: 'Lembrete de refeição' })).toBeChecked();
       expect(screen.getByRole('switch', { name: 'Não incomodar, 22:00 às 08:00' })).toBeOnTheScreen();
       expect(screen.queryByTestId('notifications-denied')).toBeNull();
+    });
+
+    it('turns quiet hours off by sending equal start and end', async () => {
+      (api.updateMe as jest.Mock).mockResolvedValue(me());
+      await renderWithProviders(<NotificationsSettingsScreen />);
+      await fireEvent.press(await screen.findByRole('switch', { name: 'Não incomodar, 22:00 às 08:00' }));
+      expect(api.updateMe).toHaveBeenCalledWith({
+        notifications: { quiet_hours_start: '00:00', quiet_hours_end: '00:00' },
+      });
+    });
+
+    it('shows a message when saving fails', async () => {
+      (api.updateMe as jest.Mock).mockRejectedValue(new ApiError(500, 'UNKNOWN_ERROR', ''));
+      await renderWithProviders(<NotificationsSettingsScreen />);
+      await fireEvent.press(await screen.findByRole('switch', { name: 'Resumo semanal' }));
+      expect(await screen.findByText('Não deu para salvar a mudança. Tente de novo.')).toBeOnTheScreen();
+    });
+
+    it('shows the error state with retry when preferences cannot load', async () => {
+      (api.getMe as jest.Mock).mockRejectedValue(new ApiError(500, 'UNKNOWN_ERROR', ''));
+      await renderWithProviders(<NotificationsSettingsScreen />);
+      expect(await screen.findByRole('button', { name: 'Tentar de novo' })).toBeOnTheScreen();
     });
 
     it('links to the system Settings when notifications are denied', async () => {

@@ -13,6 +13,7 @@ export const makeMeal = (overrides: Partial<Meal> = {}): Meal => ({
   confidence: 0.9,
   plate_share: {},
   new_foods: [],
+  source: 'photo',
   ...overrides,
 });
 

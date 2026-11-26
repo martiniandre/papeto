@@ -6,11 +6,14 @@ import type {
   Me,
   Meal,
   MealCreated,
+  ManualMealInput,
   MealPatch,
   MealPage,
   MealRange,
+  MeUpdate,
   Pet,
   PetUpdate,
+  PushTokenInput,
   RegisterInput,
   TokenPair,
 } from './types';
@@ -21,13 +24,26 @@ export const api = {
     request<TokenPair>('/auth/register', { method: 'POST', body: input, anonymous: true }),
   login: (input: LoginInput) =>
     request<TokenPair>('/auth/login', { method: 'POST', body: input, anonymous: true }),
-  /** TODO(backend): POST /v1/auth/password/forgot is not in the OpenAPI yet; this call will 404. */
+  /** Always 202 `{status: "accepted"}`, whether or not the email has an account. */
   forgotPassword: (email: string) =>
-    request<void>('/auth/password/forgot', { method: 'POST', body: { email }, anonymous: true }),
+    request<{ status: string }>('/auth/password/forgot', {
+      method: 'POST',
+      body: { email },
+      anonymous: true,
+    }),
+  /** 204; 400 `INVALID_RESET_TOKEN` when the token is unknown, used or expired. */
+  resetPassword: (token: string, password: string) =>
+    request<void>('/auth/password/reset', {
+      method: 'POST',
+      body: { token, password },
+      anonymous: true,
+    }),
 
   acceptConsent: (input: ConsentInput) =>
     request<void>('/consents', { method: 'POST', body: input }),
   getMe: () => request<Me>('/me'),
+  /** Partial update: timezone, analytics opt-out, `notifications` (any subset). */
+  updateMe: (input: MeUpdate) => request<Me>('/me', { method: 'PATCH', body: input }),
   /** Starts the 30-day pending deletion (202 `{deletion_scheduled_for}`). Never needs consent. */
   deleteAccount: () => request<{ deletion_scheduled_for: string }>('/me', { method: 'DELETE' }),
   /** Everything about the user as JSON. Always free. */
@@ -43,6 +59,19 @@ export const api = {
     form.append('photo', { uri: photoUri, name: 'meal.jpg', type: 'image/jpeg' } as unknown as Blob);
     return request<MealCreated>('/meals', { method: 'POST', body: form, signal });
   },
+  /** RF-95: items and meal type chosen by hand. Never calls the vision provider or uses the photo limit. */
+  createManualMeal: (input: ManualMealInput) =>
+    request<MealCreated>('/meals/manual', { method: 'POST', body: input }),
+  /**
+   * Deletes every meal record (account and pet stay). Consent revoke and delete-all are kept behind
+   * these two functions because the backend worker is still adding them.
+   */
+  deleteAllMeals: () => request<void>('/meals', { method: 'DELETE' }),
+  /** Registers or refreshes an Expo push token. Needs no meal consent. */
+  registerPushToken: (input: PushTokenInput) =>
+    request<PushTokenInput>('/push-tokens', { method: 'POST', body: input }),
+  deletePushToken: (token: string) =>
+    request<void>(`/push-tokens/${encodeURIComponent(token)}`, { method: 'DELETE' }),
   getMeal: (id: string) => request<Meal>(`/meals/${encodeURIComponent(id)}`),
   /** Corrects items and meal type. Points never change. */
   updateMeal: (id: string, input: MealPatch) =>

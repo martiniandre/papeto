@@ -28,7 +28,11 @@ export default function OnboardingLayout() {
         name="recover-password"
         options={{ headerShown: true, title: t('auth.recover.title') }}
       />
-      <Stack.Screen name="age-terms" options={{ gestureEnabled: false }} />
+      <Stack.Screen
+        name="reset-password"
+        options={{ headerShown: true, title: t('auth.reset.title') }}
+      />
+      <Stack.Screen name="age-terms"options={{ gestureEnabled: false }} />
       <Stack.Screen name="name-pet" options={{ gestureEnabled: false }} />
       <Stack.Screen name="meet-pet" options={{ gestureEnabled: false }} />
       <Stack.Screen name="how-lives-work" />

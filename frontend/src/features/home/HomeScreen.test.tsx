@@ -1,5 +1,6 @@
 import { act, fireEvent, screen } from '@testing-library/react-native';
 import { router } from 'expo-router';
+import { Linking } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import { api } from '@/api/endpoints';
@@ -70,5 +71,27 @@ describe('<HomeScreen /> (screen 3)', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'Registrar refeição' }));
     await act(async () => {});
     expect(router.push).toHaveBeenCalledWith('/meal/daily-limit');
+  });
+
+  describe('support card', () => {
+    it('is hidden by default', async () => {
+      (api.getPet as jest.Mock).mockResolvedValue(pet());
+      await renderWithProviders(<HomeScreen />);
+      await screen.findByTestId('mood-message');
+      expect(screen.queryByTestId('support-card')).toBeNull();
+    });
+
+    it('shows a kind card with the CVV path when support_hint is true', async () => {
+      (api.getPet as jest.Mock).mockResolvedValue(pet({ support_hint: true }));
+      const open = jest.spyOn(Linking, 'openURL').mockResolvedValue();
+      await renderWithProviders(<HomeScreen />);
+      expect(await screen.findByTestId('support-card')).toBeOnTheScreen();
+      expect(screen.getByText('Tudo bem por aí?')).toBeOnTheScreen();
+      expect(screen.getByText(/Sem cobrança/)).toBeOnTheScreen();
+      await fireEvent.press(screen.getByRole('button', { name: 'Ligar para o CVV, telefone 188' }));
+      expect(open).toHaveBeenCalledWith('tel:188');
+      await fireEvent.press(screen.getByRole('button', { name: 'Abrir o site do CVV, cvv.org.br' }));
+      expect(open).toHaveBeenCalledWith('https://cvv.org.br');
+    });
   });
 });

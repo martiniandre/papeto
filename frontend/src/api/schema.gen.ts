@@ -89,6 +89,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/auth/password/forgot": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Forgot Password
+         * @description Always 202 with the same body: the response never reveals whether the email exists.
+         */
+        post: operations["forgot_password_v1_auth_password_forgot_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/password/reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reset */
+        post: operations["reset_v1_auth_password_reset_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/consents": {
         parameters: {
             query?: never;
@@ -199,6 +236,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/meals/manual": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Manual Meal
+         * @description RF-95: log a meal by hand when the photo could not be read. No AI, no photo limit.
+         */
+        post: operations["create_manual_meal_v1_meals_manual_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/meals/{meal_id}": {
         parameters: {
             query?: never;
@@ -216,6 +273,40 @@ export interface paths {
         head?: never;
         /** Patch Meal */
         patch: operations["patch_meal_v1_meals__meal_id__patch"];
+        trace?: never;
+    };
+    "/v1/push-tokens": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Push Token */
+        post: operations["post_push_token_v1_push_tokens_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/push-tokens/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Push Token */
+        delete: operations["delete_push_token_v1_push_tokens__token__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
 }
@@ -280,6 +371,8 @@ export interface components {
             food_groups: string[];
             /** Colors */
             colors: string[];
+            /** Source */
+            source: string;
             /** Deleted At */
             deleted_at: string | null;
         };
@@ -299,7 +392,7 @@ export interface components {
         /** ExportPet */
         ExportPet: {
             /** Name */
-            name: string;
+            name: string | null;
             /** Color */
             color: string;
             /** Lives */
@@ -382,6 +475,26 @@ export interface components {
             /** Deletion Requested At */
             deletion_requested_at: string | null;
         };
+        /** ForgotPasswordRequest */
+        ForgotPasswordRequest: {
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+        };
+        /**
+         * ForgotPasswordResponse
+         * @description Identical whether or not the email belongs to an account.
+         */
+        ForgotPasswordResponse: {
+            /**
+             * Status
+             * @default accepted
+             * @constant
+             */
+            status: "accepted";
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -409,12 +522,22 @@ export interface components {
             /** Password */
             password: string;
         };
+        /**
+         * ManualMealRequest
+         * @description RF-95: a meal registered by choosing items by hand (no photo, no AI).
+         */
+        ManualMealRequest: {
+            /** Items */
+            items: string[];
+            meal_type: components["schemas"]["MealType"];
+        };
         /** MePatch */
         MePatch: {
             /** Timezone */
             timezone?: string | null;
             /** Analytics Opt Out */
             analytics_opt_out?: boolean | null;
+            notifications?: components["schemas"]["NotificationsPatch"] | null;
         };
         /** MeResponse */
         MeResponse: {
@@ -435,6 +558,7 @@ export interface components {
             plan: components["schemas"]["Plan"];
             /** Analytics Opt Out */
             analytics_opt_out: boolean;
+            notifications: components["schemas"]["NotificationsOut"];
             /** Consents */
             consents: components["schemas"]["ConsentOut"][];
             /** Deletion Scheduled For */
@@ -483,6 +607,7 @@ export interface components {
             };
             /** New Foods */
             new_foods: string[];
+            source: components["schemas"]["MealSource"];
         };
         /** MealPatch */
         MealPatch: {
@@ -496,6 +621,11 @@ export interface components {
          */
         MealRange: "today" | "7d" | "30d";
         /**
+         * MealSource
+         * @enum {string}
+         */
+        MealSource: "photo" | "manual";
+        /**
          * MealType
          * @enum {string}
          */
@@ -505,6 +635,35 @@ export interface components {
          * @enum {string}
          */
         Mood: "paused" | "fainted" | "happy" | "sleepy" | "tired";
+        /** NotificationsOut */
+        NotificationsOut: {
+            /** Meal Reminder */
+            meal_reminder: boolean;
+            /** Sleepy Notice */
+            sleepy_notice: boolean;
+            /** Weekly Summary */
+            weekly_summary: boolean;
+            /** Quiet Hours Start */
+            quiet_hours_start: string;
+            /** Quiet Hours End */
+            quiet_hours_end: string;
+        };
+        /**
+         * NotificationsPatch
+         * @description Partial update: only the fields sent change. Quiet hours are local `HH:MM`.
+         */
+        NotificationsPatch: {
+            /** Meal Reminder */
+            meal_reminder?: boolean | null;
+            /** Sleepy Notice */
+            sleepy_notice?: boolean | null;
+            /** Weekly Summary */
+            weekly_summary?: boolean | null;
+            /** Quiet Hours Start */
+            quiet_hours_start?: string | null;
+            /** Quiet Hours End */
+            quiet_hours_end?: string | null;
+        };
         /** PauseRequest */
         PauseRequest: {
             /**
@@ -532,7 +691,7 @@ export interface components {
          */
         PetResponse: {
             /** Name */
-            name: string;
+            name: string | null;
             /** Color */
             color: string;
             /** Lives */
@@ -553,7 +712,7 @@ export interface components {
          */
         PetSummary: {
             /** Name */
-            name: string;
+            name: string | null;
             /** Color */
             color: string;
             /** Lives */
@@ -571,6 +730,23 @@ export interface components {
          * @enum {string}
          */
         Plan: "free" | "premium";
+        /**
+         * PushPlatform
+         * @enum {string}
+         */
+        PushPlatform: "ios" | "android";
+        /** PushTokenOut */
+        PushTokenOut: {
+            /** Token */
+            token: string;
+            platform: components["schemas"]["PushPlatform"];
+        };
+        /** PushTokenRequest */
+        PushTokenRequest: {
+            /** Token */
+            token: string;
+            platform: components["schemas"]["PushPlatform"];
+        };
         /** ReadyResponse */
         ReadyResponse: {
             /** Status */
@@ -600,6 +776,13 @@ export interface components {
             timezone?: string | null;
             /** Adult Confirmed */
             adult_confirmed: boolean;
+        };
+        /** ResetPasswordRequest */
+        ResetPasswordRequest: {
+            /** Token */
+            token: string;
+            /** Password */
+            password: string;
         };
         /** TokenResponse */
         TokenResponse: {
@@ -764,6 +947,70 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["TokenResponse"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    forgot_password_v1_auth_password_forgot_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ForgotPasswordRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForgotPasswordResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reset_v1_auth_password_reset_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResetPasswordRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -1074,6 +1321,39 @@ export interface operations {
             };
         };
     };
+    create_manual_meal_v1_meals_manual_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ManualMealRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LogMealResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     read_meal_v1_meals__meal_id__get: {
         parameters: {
             query?: never;
@@ -1157,6 +1437,68 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["MealOut"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_push_token_v1_push_tokens_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PushTokenRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PushTokenOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_push_token_v1_push_tokens__token__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

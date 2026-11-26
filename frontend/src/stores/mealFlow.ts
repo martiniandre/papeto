@@ -9,6 +9,12 @@ import { localDayKey } from '@/utils/date';
  */
 interface MealFlowState {
   photoUri: string | null;
+  /**
+   * Photo waiting for the connection to come back (screen 10, offline). Memory only: if the app is killed
+   * the pending photo is lost by design. The photo itself is never copied anywhere else.
+   */
+  pendingPhotoUri: string | null;
+  setPendingPhoto: (uri: string | null) => void;
   result: MealCreated | null;
   /** Local day (YYYY-MM-DD) on which the API answered DAILY_LIMIT_REACHED. */
   limitReachedOn: string | null;
@@ -20,12 +26,14 @@ interface MealFlowState {
 
 export const useMealFlowStore = create<MealFlowState>((set) => ({
   photoUri: null,
+  pendingPhotoUri: null,
+  setPendingPhoto: (pendingPhotoUri) => set({ pendingPhotoUri }),
   result: null,
   limitReachedOn: null,
   setPhoto: (photoUri) => set({ photoUri }),
   setResult: (result) => set({ result }),
   markLimitReached: (now = new Date()) => set({ limitReachedOn: localDayKey(now) }),
-  reset: () => set({ photoUri: null, result: null }),
+  reset: () => set({ photoUri: null, pendingPhotoUri: null, result: null }),
 }));
 
 /** True when the daily limit was hit earlier today (resets at local midnight). */

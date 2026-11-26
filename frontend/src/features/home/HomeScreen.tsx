@@ -14,6 +14,7 @@ import { Skeleton } from '@/components/Skeleton';
 import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/ui/Icon';
 import { Text } from '@/components/ui/Text';
+import { SupportPath } from '@/features/support/SupportPath';
 import { usePetAlerts } from '@/features/pet/usePetAlerts';
 import { useStartMealLog } from '@/features/meal/useStartMealLog';
 import { colors } from '@/theme/tokens';
@@ -66,6 +67,13 @@ export default function HomeScreen() {
           <View className="flex-row items-center justify-center gap-xs">
             <Icon name="flame-outline" color={colors.primary} />
             <Text variant="secondary">{t('home.streak', { count: data.streak_days })}</Text>
+          </View>
+        ) : null}
+        {data.support_hint ? (
+          <View testID="support-card" className="gap-sm rounded-lg bg-surface p-lg">
+            <Text variant="subtitle">{t('support.homeTitle')}</Text>
+            <Text variant="secondary">{t('support.homeBody', { name })}</Text>
+            <SupportPath />
           </View>
         ) : null}
         {limitReached ? (

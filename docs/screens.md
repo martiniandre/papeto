@@ -12,6 +12,14 @@ https://claude.ai/artifact/1kwmN9FBtScfqXR6yRmJ2N
 5. **Premium:** 15 Subscribe (X and "Agora não" close it) → 16 Premium active → 38 Home (subscriber) → 13 Pause (1, 3 or 7 days) → 39 Home paused → Resume. Entry points: Result ("Seus hábitos"), Daily limit, Pause button, Profile. Subscriber versions: 32 Result, 33 Profile, 34 Your subscription.
 6. **Pet lives (shown when opening the app):** 28 Lost a life (day without a log) → 12 Fainted (0 lives) → a logged meal wakes the pet.
 
+Additions (privacy, safety, manual entry, offline):
+
+- **Manual entry (RF-95):** 10 Analysis error → "Escolher os alimentos" → Manual entry (`/meal/manual`: meal type + foods, `POST /v1/meals/manual`) → 6 Result. It never mentions the photo limit.
+- **Offline queue:** if the photo request cannot reach the server (or the device is offline), screen 10 shows "Sem conexão", keeps the pending photo in memory only and sends it when the connection returns. If the app is killed the pending photo is lost by design.
+- **Profile > Privacidade** (`/account/privacy`): revoke the meal-data consent (explains the effect first, offers export and "Apagar meus registros de refeição"), analytics switch, links to Terms and Privacy Policy (placeholder URLs from `src/config.ts`).
+- **Profile > Apoio** (`/account/support`): notice that the app does not replace a doctor or nutritionist, and CVV 188 (`tel:188`, https://cvv.org.br). Home shows a discreet card with the same path when `GET /pet` returns `support_hint=true`.
+- **Reset password** (`/reset-password?token=...`, deep link `papeto://reset-password?token=...`): new password with `POST /v1/auth/password/reset`; an invalid or expired token offers a new link (23).
+
 Correct meal (26) returns to the screen it was opened from (Result or Meal detail).
 
 ## States every data screen handles

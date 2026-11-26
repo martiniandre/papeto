@@ -17,6 +17,14 @@ import { LOW_CONFIDENCE } from './analysisOutcome';
 import { foodGroupLabel } from './labels';
 import { shouldAskForNotifications } from './notificationsPrompt';
 
+const FOOD_GROUPS = ['vegetables', 'protein', 'grains', 'legumes', 'fruits', 'dairy'] as const;
+
+/** Reading confidence in words (the 0..1 number is never shown). */
+export function confidenceLevel(confidence: number): 'high' | 'medium' | 'low' {
+  if (confidence >= 0.8) return 'high';
+  return confidence >= LOW_CONFIDENCE ? 'medium' : 'low';
+}
+
 /** Screen 6: "Sobre este prato" open by default; pet reacts to the events from the API. */
 export default function ResultScreen() {
   const { t } = useTranslation();
@@ -58,8 +66,8 @@ export default function ResultScreen() {
         {open ? (
           <View testID="about-content" className="gap-md px-lg pb-lg">
             <Text variant="caption">{t(`meal.types.${meal.meal_type}`)}</Text>
-            <Text>{meal.description}</Text>
-            {meal.confidence < LOW_CONFIDENCE ? (
+            {meal.description ? <Text>{meal.description}</Text> : null}
+            {meal.source !== 'manual' && meal.confidence < LOW_CONFIDENCE ? (
               <View className="flex-row items-start gap-sm rounded-md bg-points-bg p-md">
                 <Icon name="information-circle-outline" color={colors.pointsText} />
                 <Text className="flex-1 text-points-text">{t('meal.result.lowConfidence')}</Text>
@@ -69,26 +77,85 @@ export default function ResultScreen() {
             {meal.items.map((item) => (
               <Text key={item}>• {item}</Text>
             ))}
-            {meal.food_groups.length ? (
-              <>
-                <Text variant="subtitle">{t('meal.result.groups')}</Text>
-                <Text>{meal.food_groups.map(foodGroupLabel).join(', ')}</Text>
-              </>
-            ) : null}
+            {meal.source === 'manual' ? null : (
+              <View testID="about-free" className="gap-sm">
+                <View className="flex-row items-center justify-between gap-sm">
+                  <Text variant="caption">{t('meal.result.groupsTitle')}</Text>
+                  <Text variant="caption" className="rounded-pill bg-points-bg px-sm py-xs text-points-text">
+                    {t('meal.result.free')}
+                  </Text>
+                </View>
+                {FOOD_GROUPS.map((group) => {
+                  const present = meal.food_groups.includes(group);
+                  return (
+                    <View
+                      key={group}
+                      testID={`group-${group}`}
+                      accessible
+                      accessibilityLabel={`${foodGroupLabel(group)}, ${
+                        present ? t('meal.result.groupPresent') : t('meal.result.groupAbsent')
+                      }`}
+                      className="min-h-touch flex-row items-center gap-sm rounded-md bg-background px-md"
+                    >
+                      <Icon
+                        name={present ? 'checkmark-circle' : 'remove-circle-outline'}
+                        color={present ? colors.primary : colors.textSecondary}
+                      />
+                      <Text className={present ? 'flex-1 font-semibold' : 'flex-1 text-ink-secondary'}>
+                        {foodGroupLabel(group)}
+                      </Text>
+                      <Text variant="caption">
+                        {present ? t('meal.result.groupPresent') : t('meal.result.groupAbsent')}
+                      </Text>
+                    </View>
+                  );
+                })}
+                <Text testID="about-counts">
+                  {t('meal.detail.itemCount', { count: meal.item_count })} ·{' '}
+                  {t('meal.detail.colorCount', { count: meal.colors.length })}
+                </Text>
+                <Text testID="about-confidence">
+                  {t('meal.result.confidence', { level: t(`meal.result.confidenceLevel.${confidenceLevel(meal.confidence)}`) })}
+                </Text>
+              </View>
+            )}
           </View>
         ) : null}
       </View>
 
-      <View
-        accessible
-        accessibilityLabel={t('meal.result.habitsLocked')}
-        accessibilityState={{ disabled: true }}
-        className="min-h-touch flex-row items-center gap-sm rounded-lg bg-surface px-lg py-md"
-      >
-        <Icon name="lock-closed-outline" color={colors.textSecondary} />
-        <Text variant="secondary" className="flex-1">
-          {t('meal.result.habits')}
-        </Text>
+      <View testID="habits-locked" className="gap-sm rounded-lg bg-surface p-lg">
+        <View
+          testID="habits-locked-label"
+          accessible
+          accessibilityLabel={t('meal.result.habitsLocked')}
+          accessibilityState={{ disabled: true }}
+          className="min-h-touch flex-row items-center gap-sm"
+        >
+          <Icon name="lock-closed-outline" color={colors.textSecondary} />
+          <Text variant="subtitle" className="flex-1">
+            {t('meal.result.habits')}
+          </Text>
+          <Text variant="caption" className="rounded-pill bg-points-bg px-sm py-xs text-points-text">
+            {t('profile.premiumTag')}
+          </Text>
+        </View>
+        <View
+          testID="habits-blurred"
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+          className="gap-xs opacity-30"
+        >
+          {[0.8, 0.55, 0.4].map((width) => (
+            <View key={width} className="min-h-[14px] rounded-pill bg-ink-secondary" style={{ width: `${width * 100}%` }} />
+          ))}
+        </View>
+        <Button
+          testID="habits-unlock"
+          action="secondary"
+          label={t('meal.result.unlock')}
+          icon={<Icon name="lock-open-outline" color={colors.primary} />}
+          onPress={() => router.push('/premium')}
+        />
       </View>
     </Screen>
   );

@@ -1,9 +1,10 @@
-import { useQueryClient } from '@tanstack/react-query';
+import { onlineManager, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, ActivityIndicator, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
+import { ApiError, NETWORK_ERROR } from '@/api/client';
 import { api } from '@/api/endpoints';
 import { queryKeys } from '@/api/queries';
 import { Screen } from '@/components/Screen';
@@ -45,8 +46,19 @@ export default function AnalyzingScreen() {
       AccessibilityInfo.announceForAccessibility(t('meal.analyzing.announceSlow'));
     }, SLOW_MS);
 
-    api
-      .createMeal(photoUri, abort.signal)
+    // The photo file is kept (in memory reference only) while it waits for the connection.
+    let keepPhoto = false;
+    const holdForOffline = () => {
+      keepPhoto = true;
+      useMealFlowStore.getState().setPendingPhoto(photoUri);
+      router.replace({ pathname: '/meal/error', params: { reason: 'offline' } });
+    };
+
+    const upload = onlineManager.isOnline()
+      ? api.createMeal(photoUri, abort.signal)
+      : Promise.reject(new ApiError(0, NETWORK_ERROR, ''));
+    upload
+
       .then((created) => {
         setResult(created);
         queryClient.setQueryData(queryKeys.pet, created.pet);
@@ -66,13 +78,14 @@ export default function AnalyzingScreen() {
             router.replace('/(onboarding)/age-terms');
             return;
           case 'error':
-            router.replace({ pathname: '/meal/error', params: { reason: failure.reason } });
+            if (failure.reason === 'offline') holdForOffline();
+            else router.replace({ pathname: '/meal/error', params: { reason: failure.reason } });
         }
       })
       .finally(() => {
         clearTimeout(slowTimer);
-        // The photo is never kept: drop the temporary file whatever the outcome.
-        discardPhoto(photoUri);
+        // The photo is never kept: drop the temporary file whatever the outcome (except while offline).
+        if (!keepPhoto) discardPhoto(photoUri);
         setPhoto(null);
       });
 

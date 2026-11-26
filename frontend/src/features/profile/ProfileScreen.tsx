@@ -10,7 +10,7 @@ import { Screen } from '@/components/Screen';
 import { Skeleton } from '@/components/Skeleton';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { Text } from '@/components/ui/Text';
-import { useNotificationsSummary } from '@/features/account/useNotificationSettings';
+import { anyNoticeOn } from '@/features/account/useNotificationSettings';
 import { endSession } from '@/features/auth/session';
 import { colors } from '@/theme/tokens';
 
@@ -49,7 +49,7 @@ export default function ProfileScreen() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const me = useMe();
-  const notificationsOn = useNotificationsSummary();
+  const notificationsOn = me.data ? anyNoticeOn(me.data.notifications) : false;
 
   const signOut = async () => {
     await endSession(queryClient);
@@ -165,6 +165,18 @@ export default function ProfileScreen() {
               icon="download-outline"
               label={t('profile.export')}
               onPress={() => router.push('/account/export')}
+            />
+            <Row
+              testID="row-privacy"
+              icon="shield-checkmark-outline"
+              label={t('profile.privacy')}
+              onPress={() => router.push('/account/privacy')}
+            />
+            <Row
+              testID="row-support"
+              icon="heart-outline"
+              label={t('profile.support')}
+              onPress={() => router.push('/account/support')}
             />
             <Row
               testID="row-sign-out"

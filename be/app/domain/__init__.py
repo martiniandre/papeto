@@ -13,6 +13,17 @@ from app.domain.local_days import (
     pause_window_from_instants,
 )
 from app.domain.mood import Mood, compute_mood, is_paused
+from app.domain.notifications import (
+    DEFAULT_PREFS,
+    MAX_NOTICES_PER_DAY,
+    NOTICE_COPY,
+    NoticeCopy,
+    NoticeKind,
+    NotificationPrefs,
+    decide_notice,
+    in_quiet_hours,
+    pick_copy,
+)
 from app.domain.pet import (
     LogOutcome,
     PetEvent,
@@ -25,9 +36,15 @@ from app.domain.pet import (
 from app.domain.points import PointsAward, PointsReason, meal_points, points_for_log
 
 __all__ = [
+    "DEFAULT_PREFS",
     "DEFAULT_RULES",
+    "MAX_NOTICES_PER_DAY",
+    "NOTICE_COPY",
     "LogOutcome",
     "Mood",
+    "NoticeCopy",
+    "NoticeKind",
+    "NotificationPrefs",
     "PauseWindow",
     "PetEvent",
     "PetRulesConfig",
@@ -38,6 +55,8 @@ __all__ = [
     "can_analyze_photo",
     "compute_mood",
     "daily_photo_limit",
+    "decide_notice",
+    "in_quiet_hours",
     "is_paused",
     "is_paused_on",
     "local_day",
@@ -45,6 +64,7 @@ __all__ = [
     "meal_points",
     "new_pet",
     "pause_window_from_instants",
+    "pick_copy",
     "points_for_log",
     "read_events",
     "register_log",

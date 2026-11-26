@@ -177,6 +177,9 @@ class AdultConfirmationCases:
             await env.client.patch("/v1/pet", json={"name": "Bolinha"}, headers=headers),
             await env.client.post("/v1/pet/pause", json={"days": 1}, headers=headers),
             await env.client.delete("/v1/pet/pause", headers=headers),
+            await env.client.post(
+                "/v1/pet/attributes", json={"allocations": {"strength": 1}}, headers=headers
+            ),
             await env.client.get("/v1/meals", headers=headers),
             await env.client.post(
                 "/v1/meals/manual",

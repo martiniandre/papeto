@@ -91,7 +91,7 @@ async def spend_attributes(
 ) -> PetView:
     """Spend unspent attribute points, all or nothing, under the pet row lock."""
     async with ctx.uow_factory() as uow:
-        user = await require_user(uow, user_id)
+        user = await require_adult_user(uow, user_id)
         pet = await load_pet(uow, user_id)  # row lock: parallel requests cannot overspend
         last_seen = pet.last_seen_lives
         level = level_for_points(await uow.points.total(user_id), ctx.rules)

@@ -11,6 +11,10 @@ function mockReduceMotion(enabled: boolean) {
 }
 
 describe('<Pet />', () => {
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
   beforeEach(() => {
     jest.restoreAllMocks();
     jest.spyOn(AccessibilityInfo, 'announceForAccessibility').mockImplementation(() => undefined);
@@ -44,12 +48,20 @@ describe('<Pet />', () => {
     expect(moodArt.paused).not.toBe(moodArt.sleepy);
   });
 
-  it('plays the celebration and announces the event when motion is allowed', async () => {
+  it('plays the celebration, announces the event and returns to the mood art when it ends', async () => {
+    // Fake timers: the celebration lasts 2500 ms, so a real timer makes this test depend on machine speed.
+    jest.useFakeTimers();
     mockReduceMotion(false);
     await render(<Pet mood="happy" events={['celebrate']} name="Pipoca" />);
     await act(async () => {});
     expect(screen.getByTestId('pet-art-celebrate').props.source).toBe(celebratingArt);
     expect(AccessibilityInfo.announceForAccessibility).toHaveBeenCalledWith('Pipoca ganhou uma vida!');
+
+    await act(async () => {
+      jest.advanceTimersByTime(2500);
+    });
+    expect(screen.queryByTestId('pet-art-celebrate')).toBeNull();
+    expect(screen.getByTestId('pet-art-happy').props.source).toBe(moodArt.happy);
   });
 
   it('keeps a static mood image with reduce motion, but still announces events', async () => {

@@ -1,4 +1,4 @@
-import { useFocusEffect } from 'expo-router';
+import { Redirect, useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
 import { RefreshControl, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -38,6 +38,8 @@ export default function HomeScreen() {
     content = <ErrorState error={pet.error} onRetry={() => void pet.refetch()} />;
   } else {
     const data = pet.data;
+    // Screen 43: the pet stays hidden until it has a name.
+    if (data.name === null) return <Redirect href="/(onboarding)/name-pet" />;
     const name = data.name;
     const firstDay = data.streak_days === 0 && data.points === 0;
     content = (

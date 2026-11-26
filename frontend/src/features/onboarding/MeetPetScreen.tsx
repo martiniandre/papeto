@@ -34,7 +34,7 @@ export default function MeetPetScreen() {
     );
   }
 
-  const name = pet.data.name;
+  const name = pet.data.name ?? t('pet.defaultName');
   const color: PetColor = updatePet.variables?.color ?? pet.data.color;
 
   return (

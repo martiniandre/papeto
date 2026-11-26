@@ -19,15 +19,21 @@ export type PetColor = string;
 export const PET_COLORS = ['lilac', 'mint', 'peach', 'sky'] as const;
 export type OfferedPetColor = (typeof PET_COLORS)[number];
 
-/** GET /pet. The name is never null: new pets start as "Bolinha". */
-export type Pet = Schemas['PetResponse'];
+/**
+ * GET /pet. A new pet has `name: null` until the user names it (screen 43).
+ * TODO(api-types): hand-edited from `string`; remove this override once schema.gen.ts is regenerated
+ * from the backend that returns `name: string | null`.
+ */
+export type Pet = Omit<Schemas['PetResponse'], 'name'> & { name: string | null };
 /** Pet summary returned inside a logged meal (no events). */
-export type PetSummary = Schemas['PetSummary'];
+export type PetSummary = Omit<Schemas['PetSummary'], 'name'> & { name: string | null };
 export type PetUpdate = { name?: string; color?: PetColor };
 
 export type ConsentType = Schemas['ConsentType'];
 export type ConsentInput = Schemas['ConsentRequest'];
 export type ConsentRecord = Schemas['ConsentOut'];
+
+export type DataExport = Schemas['ExportResponse'];
 
 export type Plan = Schemas['Plan'];
 export type Me = Schemas['MeResponse'];
@@ -42,6 +48,7 @@ export type MealType = Schemas['MealType'];
 /** `plate_share` and `new_foods` are empty for free users (Premium view fills them). */
 export type Meal = Schemas['MealOut'];
 export type MealCreated = Schemas['LogMealResponse'];
+export type MealPatch = Schemas['MealPatch'];
 export type MealRange = Schemas['MealRange'];
 export type MealPage = Schemas['MealListResponse'];
 

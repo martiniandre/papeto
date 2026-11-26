@@ -2,12 +2,14 @@ import { QueryClient, useInfiniteQuery, useMutation, useQuery, useQueryClient } 
 
 import { isApiError } from './client';
 import { api } from './endpoints';
-import type { MealRange, Pet, PetUpdate } from './types';
+import type { Meal, MealPatch, MealRange, Pet, PetUpdate } from './types';
 
 export const queryKeys = {
   me: ['me'] as const,
   pet: ['pet'] as const,
   meals: (range: MealRange) => ['meals', range] as const,
+  mealsAll: ['meals'] as const,
+  meal: (id: string) => ['meal', id] as const,
 };
 
 export function createQueryClient(): QueryClient {
@@ -43,3 +45,18 @@ export const useMeals = (range: MealRange) =>
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last) => last.next_cursor ?? undefined,
   });
+
+export const useMeal = (id: string) =>
+  useQuery({ queryKey: queryKeys.meal(id), queryFn: () => api.getMeal(id) });
+
+/** PATCH /meals/{id}. Points never change, so the pet is not refetched. */
+export function useUpdateMeal(id: string) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (input: MealPatch) => api.updateMeal(id, input),
+    onSuccess: (meal: Meal) => {
+      client.setQueryData(queryKeys.meal(id), meal);
+      void client.invalidateQueries({ queryKey: queryKeys.mealsAll });
+    },
+  });
+}

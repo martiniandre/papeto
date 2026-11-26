@@ -4,6 +4,7 @@ Public API re-exported here so services import from `app.domain` only.
 """
 
 from app.domain.config import DEFAULT_RULES, PetRulesConfig
+from app.domain.events import ProductEvent
 from app.domain.limits import Plan, can_analyze_photo, daily_photo_limit, remaining_photos
 from app.domain.local_days import (
     PauseWindow,
@@ -34,6 +35,7 @@ from app.domain.pet import (
     settle,
 )
 from app.domain.points import PointsAward, PointsReason, meal_points, points_for_log
+from app.domain.risk import needs_support_hint
 
 __all__ = [
     "DEFAULT_PREFS",
@@ -52,6 +54,7 @@ __all__ = [
     "Plan",
     "PointsAward",
     "PointsReason",
+    "ProductEvent",
     "can_analyze_photo",
     "compute_mood",
     "daily_photo_limit",
@@ -62,6 +65,7 @@ __all__ = [
     "local_day",
     "local_day_start",
     "meal_points",
+    "needs_support_hint",
     "new_pet",
     "pause_window_from_instants",
     "pick_copy",

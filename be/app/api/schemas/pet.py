@@ -36,10 +36,19 @@ class PetResponse(PetBase):
     """GET /pet: the pet plus one-shot events."""
 
     events: list[PetEvent]
+    # RF-98: true when the risk pattern is on and met. Show a kind message and the CVV 188 path.
+    # Always false while the threshold is not decided (disabled).
+    support_hint: bool
 
     @classmethod
     def from_view(cls, view: PetView) -> PetResponse:
-        return cls.model_validate({**cls.base_fields(view), "events": list(view.events)})
+        return cls.model_validate(
+            {
+                **cls.base_fields(view),
+                "events": list(view.events),
+                "support_hint": view.support_hint,
+            }
+        )
 
 
 class PetSummary(PetBase):

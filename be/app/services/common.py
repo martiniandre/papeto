@@ -14,6 +14,8 @@ from app.domain import (
     PetState,
     Plan,
     compute_mood,
+    local_day,
+    needs_support_hint,
     pause_window_from_instants,
     settle,
 )
@@ -80,7 +82,17 @@ async def build_pet_view(
     now: datetime,
     events: tuple[PetEvent, ...] = (),
     rules: PetRulesConfig = DEFAULT_RULES,
+    zone: ZoneInfo | None = None,
 ) -> PetView:
+    support_hint = False
+    if zone is not None and rules.risk_pattern_days is not None:  # RF-98, disabled by default
+        support_hint = needs_support_hint(
+            await uow.usage.logged_days(pet.user_id),
+            await pause_windows(uow, pet.user_id, zone),
+            today,
+            local_day(pet.created_at, zone),
+            rules,
+        )
     return PetView(
         name=pet.name,
         color=pet.color,
@@ -90,4 +102,5 @@ async def build_pet_view(
         points=await uow.points.total(pet.user_id),
         mood=compute_mood(state, today, now),
         events=events,
+        support_hint=support_hint,
     )

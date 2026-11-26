@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime
 
-from app.domain import Mood, PetEvent, Plan
+from app.domain import Mood, PetEvent, Plan, ProductEvent
 from app.ports.repositories import ConsentRecord, ConsentType, MealRecord, UserRecord
 
 
@@ -19,6 +19,7 @@ class PetView:
     points: int
     mood: Mood
     events: tuple[PetEvent, ...] = ()
+    support_hint: bool = False  # RF-98: show the kind message and the CVV 188 path
 
 
 @dataclass(frozen=True, slots=True)
@@ -41,6 +42,15 @@ class LogMealResult:
     meal: MealRecord
     pet: PetView
     events: tuple[PetEvent, ...]
+    # RF-70 events decided inside the transaction, emitted after it commits.
+    pending_events: tuple[tuple[ProductEvent, dict[str, str | int | bool]], ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class ConsentResult:
+    record: ConsentRecord
+    # Follow-ups the app should offer (only when `meal_data` was revoked).
+    suggested_actions: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)

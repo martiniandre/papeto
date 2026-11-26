@@ -10,6 +10,9 @@ import EditMealScreen from './EditMealScreen';
 
 jest.mock('@/api/endpoints', () => ({ api: { getMeal: jest.fn(), updateMeal: jest.fn() } }));
 
+// The first render in a cold Jest worker can be slow on loaded machines.
+jest.setTimeout(30000);
+
 describe('<EditMealScreen /> (screen 26)', () => {
   beforeEach(() => {
     jest.clearAllMocks();

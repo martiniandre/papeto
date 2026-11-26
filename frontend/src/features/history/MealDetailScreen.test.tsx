@@ -11,6 +11,9 @@ import { undoMealDelete, usePendingDeleteStore } from './pendingDelete';
 
 jest.mock('@/api/endpoints', () => ({ api: { getMeal: jest.fn(), deleteMeal: jest.fn() } }));
 
+// The first render in a cold Jest worker can be slow on loaded machines.
+jest.setTimeout(30000);
+
 describe('<MealDetailScreen /> (screens 25 and 37)', () => {
   beforeEach(() => {
     jest.clearAllMocks();

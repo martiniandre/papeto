@@ -13,7 +13,7 @@ from types import TracebackType
 from typing import Protocol, Self
 from uuid import UUID
 
-from app.domain import PetState, PointsReason
+from app.domain import DEFAULT_PREFS, NotificationPrefs, PetState, PointsReason
 
 
 class ConsentType(StrEnum):
@@ -37,6 +37,7 @@ class UserRecord:
     adult_confirmed_at: datetime
     created_at: datetime
     deletion_requested_at: datetime | None = None
+    notifications: NotificationPrefs = DEFAULT_PREFS
 
 
 @dataclass(frozen=True, slots=True)

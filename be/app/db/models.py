@@ -7,7 +7,7 @@ Table names are plural because `user` is a reserved word in Postgres.
 from __future__ import annotations
 
 import uuid
-from datetime import date, datetime
+from datetime import date, datetime, time
 
 from sqlalchemy import (
     JSON,
@@ -20,7 +20,9 @@ from sqlalchemy import (
     Index,
     Integer,
     String,
+    Time,
     Uuid,
+    true,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -45,6 +47,11 @@ class UserModel(Base):
     adult_confirmed_at: Mapped[datetime] = _ts()
     created_at: Mapped[datetime] = _ts()
     deletion_requested_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    notify_meal_reminder: Mapped[bool] = mapped_column(Boolean, server_default=true())
+    notify_sleepy: Mapped[bool] = mapped_column(Boolean, server_default=true())
+    notify_weekly_summary: Mapped[bool] = mapped_column(Boolean, server_default=true())
+    quiet_hours_start: Mapped[time] = mapped_column(Time, server_default="22:00:00")
+    quiet_hours_end: Mapped[time] = mapped_column(Time, server_default="08:00:00")
 
 
 class ConsentModel(Base):

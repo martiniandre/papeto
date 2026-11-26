@@ -6,7 +6,7 @@ from collections.abc import AsyncIterator
 
 import pytest
 
-from tests.notification_cases import PushTokenCases
+from tests.notification_cases import PreferenceCases, PushTokenCases
 from tests.support.api_env import ApiEnv, build_env
 from tests.support.memory import MemoryUowFactory
 
@@ -19,4 +19,8 @@ async def env() -> AsyncIterator[ApiEnv]:
 
 
 class TestPushTokensInMemory(PushTokenCases):
+    pass
+
+
+class TestPreferencesInMemory(PreferenceCases):
     pass

@@ -76,3 +76,53 @@ class PushTokenCases:
         post = await env.client.post("/v1/push-tokens", json={"token": TOKEN, "platform": "ios"})
         assert_error(post, 401, "UNAUTHORIZED")
         assert_error(await env.client.delete(f"/v1/push-tokens/{TOKEN}"), 401, "UNAUTHORIZED")
+
+
+DEFAULT_NOTIFICATIONS = {
+    "meal_reminder": True,
+    "sleepy_notice": True,
+    "weekly_summary": True,
+    "quiet_hours_start": "22:00",
+    "quiet_hours_end": "08:00",
+}
+
+
+class PreferenceCases:
+    async def test_defaults_are_on_with_night_quiet_hours(self, env: ApiEnv) -> None:
+        headers = await signup(env)
+        body = (await env.client.get("/v1/me", headers=headers)).json()
+        assert body["notifications"] == DEFAULT_NOTIFICATIONS
+
+    async def test_patch_is_partial_and_persists(self, env: ApiEnv) -> None:
+        headers = await signup(env)
+        response = await env.client.patch(
+            "/v1/me",
+            json={"notifications": {"meal_reminder": False, "quiet_hours_end": "07:30"}},
+            headers=headers,
+        )
+        assert response.status_code == 200, response.text
+        expected = {**DEFAULT_NOTIFICATIONS, "meal_reminder": False, "quiet_hours_end": "07:30"}
+        assert response.json()["notifications"] == expected
+        assert (await env.client.get("/v1/me", headers=headers)).json()["notifications"] == expected
+        again = await env.client.patch(
+            "/v1/me", json={"notifications": {"weekly_summary": False}}, headers=headers
+        )
+        assert again.json()["notifications"] == {**expected, "weekly_summary": False}
+
+    async def test_other_patch_fields_leave_preferences_alone(self, env: ApiEnv) -> None:
+        headers = await signup(env)
+        await env.client.patch(
+            "/v1/me", json={"notifications": {"sleepy_notice": False}}, headers=headers
+        )
+        response = await env.client.patch(
+            "/v1/me", json={"analytics_opt_out": True}, headers=headers
+        )
+        assert response.json()["notifications"]["sleepy_notice"] is False
+
+    async def test_invalid_quiet_hours_are_rejected(self, env: ApiEnv) -> None:
+        headers = await signup(env)
+        for bad in ({"quiet_hours_start": "24:00"}, {"quiet_hours_end": "7am"}, {"unknown": True}):
+            response = await env.client.patch(
+                "/v1/me", json={"notifications": bad}, headers=headers
+            )
+            assert_error(response, 422, "VALIDATION_ERROR")

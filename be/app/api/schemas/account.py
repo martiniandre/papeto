@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import date, datetime, time
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
-from app.domain import Plan
+from app.domain import NotificationPrefs, Plan
 from app.ports.repositories import ConsentRecord, ConsentType, UserExport
 from app.services.views import MeView
 
@@ -36,6 +36,43 @@ class ConsentOut(BaseModel):
         )
 
 
+HHMM_PATTERN = r"^([01]\d|2[0-3]):[0-5]\d$"
+
+
+def _hhmm(value: time) -> str:
+    return value.strftime("%H:%M")
+
+
+class NotificationsOut(BaseModel):
+    meal_reminder: bool
+    sleepy_notice: bool
+    weekly_summary: bool
+    quiet_hours_start: str
+    quiet_hours_end: str
+
+    @classmethod
+    def from_prefs(cls, prefs: NotificationPrefs) -> NotificationsOut:
+        return cls(
+            meal_reminder=prefs.meal_reminder,
+            sleepy_notice=prefs.sleepy_notice,
+            weekly_summary=prefs.weekly_summary,
+            quiet_hours_start=_hhmm(prefs.quiet_hours_start),
+            quiet_hours_end=_hhmm(prefs.quiet_hours_end),
+        )
+
+
+class NotificationsPatch(BaseModel):
+    """Partial update: only the fields sent change. Quiet hours are local `HH:MM`."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    meal_reminder: bool | None = None
+    sleepy_notice: bool | None = None
+    weekly_summary: bool | None = None
+    quiet_hours_start: str | None = Field(default=None, pattern=HHMM_PATTERN)
+    quiet_hours_end: str | None = Field(default=None, pattern=HHMM_PATTERN)
+
+
 class MeResponse(BaseModel):
     id: UUID
     email: EmailStr
@@ -43,6 +80,7 @@ class MeResponse(BaseModel):
     timezone: str
     plan: Plan
     analytics_opt_out: bool
+    notifications: NotificationsOut
     consents: list[ConsentOut]
     deletion_scheduled_for: datetime | None
 
@@ -55,6 +93,7 @@ class MeResponse(BaseModel):
             timezone=view.user.timezone,
             plan=view.plan,
             analytics_opt_out=view.user.analytics_opt_out,
+            notifications=NotificationsOut.from_prefs(view.user.notifications),
             consents=[ConsentOut.from_record(c) for c in view.consents.values()],
             deletion_scheduled_for=view.deletion_scheduled_for,
         )
@@ -65,6 +104,7 @@ class MePatch(BaseModel):
 
     timezone: str | None = Field(default=None, max_length=64)
     analytics_opt_out: bool | None = None
+    notifications: NotificationsPatch | None = None
 
 
 class ExportPet(BaseModel):

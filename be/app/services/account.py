@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 from dataclasses import replace
-from datetime import timedelta
+from datetime import time, timedelta
 from uuid import UUID
 
+from app.domain import NotificationPrefs
 from app.ports.repositories import UserExport
 from app.services.common import current_plan, parse_timezone, require_user
 from app.services.context import ServiceContext
@@ -31,6 +32,11 @@ async def update_me(
     *,
     timezone: str | None,
     analytics_opt_out: bool | None,
+    meal_reminder: bool | None = None,
+    sleepy_notice: bool | None = None,
+    weekly_summary: bool | None = None,
+    quiet_hours_start: time | None = None,
+    quiet_hours_end: time | None = None,
 ) -> MeView:
     if timezone is not None:
         parse_timezone(timezone)
@@ -40,6 +46,15 @@ async def update_me(
             user = replace(user, timezone=timezone)
         if analytics_opt_out is not None:
             user = replace(user, analytics_opt_out=analytics_opt_out)
+        current = user.notifications
+        prefs = NotificationPrefs(
+            meal_reminder=current.meal_reminder if meal_reminder is None else meal_reminder,
+            sleepy_notice=current.sleepy_notice if sleepy_notice is None else sleepy_notice,
+            weekly_summary=current.weekly_summary if weekly_summary is None else weekly_summary,
+            quiet_hours_start=quiet_hours_start or current.quiet_hours_start,
+            quiet_hours_end=quiet_hours_end or current.quiet_hours_end,
+        )
+        user = replace(user, notifications=prefs)
         await uow.users.save(user)
         await uow.commit()
     return await get_me(ctx, user_id)

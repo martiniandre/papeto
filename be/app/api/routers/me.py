@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import time
+
 from fastapi import APIRouter
 
 from app.api.deps import Ctx, UserId
@@ -11,11 +13,16 @@ from app.api.schemas.account import (
     ExportResponse,
     MePatch,
     MeResponse,
+    NotificationsPatch,
 )
 from app.services import account
 from app.services.consents import record_consent
 
 router = APIRouter(tags=["account"])
+
+
+def _parse_hhmm(value: str | None) -> time | None:
+    return time.fromisoformat(value) if value is not None else None
 
 
 @router.post("/consents", status_code=201)
@@ -33,8 +40,17 @@ async def get_me(ctx: Ctx, user_id: UserId) -> MeResponse:
 
 @router.patch("/me")
 async def patch_me(body: MePatch, ctx: Ctx, user_id: UserId) -> MeResponse:
+    prefs = body.notifications or NotificationsPatch()
     view = await account.update_me(
-        ctx, user_id, timezone=body.timezone, analytics_opt_out=body.analytics_opt_out
+        ctx,
+        user_id,
+        timezone=body.timezone,
+        analytics_opt_out=body.analytics_opt_out,
+        meal_reminder=prefs.meal_reminder,
+        sleepy_notice=prefs.sleepy_notice,
+        weekly_summary=prefs.weekly_summary,
+        quiet_hours_start=_parse_hhmm(prefs.quiet_hours_start),
+        quiet_hours_end=_parse_hhmm(prefs.quiet_hours_end),
     )
     return MeResponse.from_view(view)
 

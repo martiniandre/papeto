@@ -14,11 +14,11 @@ from sqlalchemy import create_engine, inspect
 
 from app.db.models import Base
 
-MIGRATION = Path(__file__).parents[2] / "alembic" / "versions" / "0001_initial_schema.py"
+VERSIONS = Path(__file__).parents[2] / "alembic" / "versions"
 
 
-def _load() -> object:
-    spec = importlib.util.spec_from_file_location("migration_0001", MIGRATION)
+def _load(path: Path) -> object:
+    spec = importlib.util.spec_from_file_location(f"migration_{path.stem}", path)
     assert spec is not None
     assert spec.loader is not None
     module = importlib.util.module_from_spec(spec)
@@ -26,13 +26,19 @@ def _load() -> object:
     return module
 
 
-def test_migration_matches_models_and_is_reversible() -> None:
-    migration = _load()
+def _migrations() -> list[object]:
+    """Every migration, oldest first (file names start with the sequence number)."""
+    return [_load(path) for path in sorted(VERSIONS.glob("0*.py"))]
+
+
+def test_migrations_match_models_and_are_reversible() -> None:
+    migrations = _migrations()
     engine = create_engine("sqlite://")
     with engine.begin() as connection:
         context = MigrationContext.configure(connection)
         with Operations.context(context):
-            migration.upgrade()  # type: ignore[attr-defined]
+            for migration in migrations:
+                migration.upgrade()  # type: ignore[attr-defined]
             inspector = inspect(connection)
             assert set(inspector.get_table_names()) == set(Base.metadata.tables)
             for name, table in Base.metadata.tables.items():
@@ -45,7 +51,8 @@ def test_migration_matches_models_and_is_reversible() -> None:
                         name,
                         column.name,
                     )
-            migration.downgrade()  # type: ignore[attr-defined]
+            for migration in reversed(migrations):
+                migration.downgrade()  # type: ignore[attr-defined]
             assert inspect(connection).get_table_names() == []
 
 

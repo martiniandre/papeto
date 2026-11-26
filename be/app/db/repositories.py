@@ -11,7 +11,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import models as m
-from app.domain import PetState, PointsReason
+from app.domain import NotificationPrefs, PetState, PointsReason
 from app.ports.repositories import (
     ConsentRecord,
     ConsentType,
@@ -39,7 +39,22 @@ def _user(row: m.UserModel) -> UserRecord:
         adult_confirmed_at=row.adult_confirmed_at,
         created_at=row.created_at,
         deletion_requested_at=row.deletion_requested_at,
+        notifications=NotificationPrefs(
+            meal_reminder=row.notify_meal_reminder,
+            sleepy_notice=row.notify_sleepy,
+            weekly_summary=row.notify_weekly_summary,
+            quiet_hours_start=row.quiet_hours_start,
+            quiet_hours_end=row.quiet_hours_end,
+        ),
     )
+
+
+def _apply_prefs(row: m.UserModel, prefs: NotificationPrefs) -> None:
+    row.notify_meal_reminder = prefs.meal_reminder
+    row.notify_sleepy = prefs.sleepy_notice
+    row.notify_weekly_summary = prefs.weekly_summary
+    row.quiet_hours_start = prefs.quiet_hours_start
+    row.quiet_hours_end = prefs.quiet_hours_end
 
 
 class SqlUserRepository:
@@ -47,19 +62,19 @@ class SqlUserRepository:
         self._s = session
 
     async def add(self, user: UserRecord) -> None:
-        self._s.add(
-            m.UserModel(
-                id=user.id,
-                email=user.email,
-                password_hash=user.password_hash,
-                name=user.name,
-                timezone=user.timezone,
-                analytics_opt_out=user.analytics_opt_out,
-                adult_confirmed_at=user.adult_confirmed_at,
-                created_at=user.created_at,
-                deletion_requested_at=user.deletion_requested_at,
-            )
+        row = m.UserModel(
+            id=user.id,
+            email=user.email,
+            password_hash=user.password_hash,
+            name=user.name,
+            timezone=user.timezone,
+            analytics_opt_out=user.analytics_opt_out,
+            adult_confirmed_at=user.adult_confirmed_at,
+            created_at=user.created_at,
+            deletion_requested_at=user.deletion_requested_at,
         )
+        _apply_prefs(row, user.notifications)
+        self._s.add(row)
         try:
             await self._s.flush()
         except IntegrityError as exc:
@@ -84,6 +99,7 @@ class SqlUserRepository:
         row.analytics_opt_out = user.analytics_opt_out
         row.deletion_requested_at = user.deletion_requested_at
         row.password_hash = user.password_hash
+        _apply_prefs(row, user.notifications)
         await self._s.flush()
 
 

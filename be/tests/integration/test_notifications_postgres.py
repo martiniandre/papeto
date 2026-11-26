@@ -4,10 +4,14 @@ from __future__ import annotations
 
 import pytest
 
-from tests.notification_cases import PushTokenCases
+from tests.notification_cases import PreferenceCases, PushTokenCases
 
 pytestmark = pytest.mark.integration
 
 
 class TestPushTokensPostgres(PushTokenCases):
+    pass
+
+
+class TestPreferencesPostgres(PreferenceCases):
     pass

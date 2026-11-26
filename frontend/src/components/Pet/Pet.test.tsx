@@ -64,6 +64,14 @@ describe('<Pet />', () => {
     expect(screen.getByTestId('pet-art-happy').props.source).toBe(moodArt.happy);
   });
 
+  it('celebrates and announces a level_up', async () => {
+    mockReduceMotion(false);
+    await render(<Pet mood="happy" events={['level_up']} name="Pipoca" />);
+    await act(async () => {});
+    expect(screen.getByTestId('pet-art-celebrate').props.source).toBe(celebratingArt);
+    expect(AccessibilityInfo.announceForAccessibility).toHaveBeenCalledWith('Pipoca subiu de nível!');
+  });
+
   it('keeps a static mood image with reduce motion, but still announces events', async () => {
     mockReduceMotion(true);
     await render(<Pet mood="happy" events={['wake_up']} name="Pipoca" />);

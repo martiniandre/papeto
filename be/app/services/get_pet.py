@@ -6,8 +6,9 @@ import re
 from dataclasses import replace
 from uuid import UUID
 
-from app.domain import read_events
+from app.domain import ProductEvent, read_events
 from app.ports.repositories import PetRecord, UnitOfWork, UserRecord
+from app.services.analytics import life_change_events, track_all
 from app.services.common import build_pet_view, parse_timezone, require_user, settled_state
 from app.services.context import ServiceContext
 from app.services.errors import PetNotFound, ValidationFailed
@@ -35,7 +36,7 @@ async def settle_and_save(
     events = read_events(pet.last_seen_lives, state.lives)
     saved = replace(pet, state=state, last_seen_lives=state.lives)
     await uow.pets.save(saved)
-    view = await build_pet_view(uow, saved, state, today, now, events, ctx.rules)
+    view = await build_pet_view(uow, saved, state, today, now, events, ctx.rules, zone)
     return saved, view
 
 
@@ -45,7 +46,8 @@ async def get_pet(ctx: ServiceContext, user_id: UUID) -> PetView:
         pet = await load_pet(uow, user_id)
         _, view = await settle_and_save(ctx, uow, user, pet)
         await uow.commit()
-        return view
+    await track_all(ctx, user, life_change_events(pet.last_seen_lives, view.lives))
+    return view
 
 
 async def update_pet(
@@ -60,7 +62,13 @@ async def update_pet(
     async with ctx.uow_factory() as uow:
         user = await require_user(uow, user_id)
         pet = await load_pet(uow, user_id)
+        was_unnamed = pet.name is None
+        last_seen = pet.last_seen_lives
         pet = replace(pet, name=name or pet.name, color=color or pet.color)
         _, view = await settle_and_save(ctx, uow, user, pet)
         await uow.commit()
-        return view
+    events = life_change_events(last_seen, view.lives)
+    if was_unnamed and name is not None:
+        events.append((ProductEvent.PET_NAMED, {}))
+    await track_all(ctx, user, events)
+    return view

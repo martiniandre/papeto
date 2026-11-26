@@ -264,8 +264,8 @@ async def test_email_fake_records_messages() -> None:
     assert email.sent == [("a@example.com", "subject", "body")]
 
 
-def test_analytics_and_error_reporter_fakes_do_not_raise() -> None:
+async def test_analytics_and_error_reporter_fakes_do_not_raise() -> None:
     analytics: AnalyticsProvider = NoopAnalytics()
     reporter: ErrorReporter = NoopErrorReporter()
-    analytics.track("anon-id", "meal_logged", {"count": 1})
+    await analytics.track("anon-id", "meal_logged", {"count": 1})
     reporter.capture(RuntimeError("boom"))

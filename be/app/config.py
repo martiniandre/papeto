@@ -37,12 +37,16 @@ class Settings(BaseSettings):
     payment_provider: str = "fake"
     push_provider: str = "fake"  # "fake" or "expo"
     email_provider: str = "fake"
+    analytics_provider: str = "noop"  # "noop" (default, disabled), "fake" or "posthog"
     vision_api_key: SecretStr | None = None
     stripe_secret_key: SecretStr | None = None
     stripe_webhook_secret: SecretStr | None = None
     sentry_dsn: SecretStr | None = None
     posthog_api_key: SecretStr | None = None
     expo_access_token: SecretStr | None = None
+    posthog_host: str = "https://us.i.posthog.com"
+    # Secret mixed into the per-user analytics id. Falls back to a value derived from jwt_secret.
+    analytics_id_secret: SecretStr | None = None
 
     max_upload_bytes: int = 8 * 1024 * 1024
     deletion_grace_days: int = 30

@@ -15,9 +15,17 @@ from datetime import date, datetime, timedelta
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
-from app.domain import PointsReason, can_analyze_photo, register_log
+from app.domain import (
+    PetEvent,
+    PointsReason,
+    ProductEvent,
+    can_analyze_photo,
+    register_log,
+    settle,
+)
 from app.ports import MealType, NotFoodError, PhotoNotReadableError, VisionUnavailableError
 from app.ports.repositories import MealRecord, MealSource, PointsEventRecord, UnitOfWork
+from app.services.analytics import life_change_events, track_all
 from app.services.common import (
     build_pet_view,
     current_plan,
@@ -78,8 +86,14 @@ async def _persist_log(
     )
     saved = replace(pet, state=outcome.pet, last_seen_lives=outcome.pet.lives)
     await uow.pets.save(saved)
-    view = await build_pet_view(uow, saved, outcome.pet, today, now, (), ctx.rules)
-    return LogMealResult(meal=meal, pet=view, events=outcome.events)
+    view = await build_pet_view(uow, saved, outcome.pet, today, now, (), ctx.rules, zone)
+    pending = life_change_events(
+        pet.last_seen_lives, settle(pet.state, logged_days, windows, today).lives
+    )
+    if PetEvent.WAKE_UP in outcome.events:
+        pending.append((ProductEvent.PET_WOKE_UP, {}))
+    pending.append((ProductEvent.MEAL_LOGGED, {"source": meal.source.value}))
+    return LogMealResult(meal=meal, pet=view, events=outcome.events, pending_events=tuple(pending))
 
 
 async def log_meal(
@@ -131,6 +145,7 @@ async def log_meal(
         result = await _persist_log(ctx, uow, user_id, today=today, now=now, zone=zone, meal=meal)
         await uow.usage.increment(user_id, today)
         await uow.commit()
+    await track_all(ctx, user, result.pending_events)
     return result
 
 
@@ -166,4 +181,5 @@ async def log_manual_meal(
         result = await _persist_log(ctx, uow, user_id, today=today, now=now, zone=zone, meal=meal)
         await uow.usage.increment_manual(user_id, today)
         await uow.commit()
+    await track_all(ctx, user, result.pending_events)
     return result

@@ -12,11 +12,18 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from app.config import AppEnv, Settings
 from app.db.session import SqlUowFactory, create_engine
-from app.ports import EmailProvider, FoodVisionProvider, PushProvider
+from app.ports import AnalyticsProvider, EmailProvider, FoodVisionProvider, PushProvider
 from app.providers.expo_push import ExpoPushProvider
-from app.providers.fake_misc import NoopAnalytics, NoopErrorReporter, RecordingEmail, RecordingPush
+from app.providers.fake_misc import (
+    NoopAnalytics,
+    NoopErrorReporter,
+    RecordingAnalytics,
+    RecordingEmail,
+    RecordingPush,
+)
 from app.providers.fake_vision import FakeFoodVision
 from app.providers.local_auth import LocalAuthProvider
+from app.providers.posthog_analytics import PostHogAnalytics
 from app.providers.system_clock import SystemClock, UuidGenerator
 from app.services.context import ServiceContext
 
@@ -59,6 +66,28 @@ def _email(settings: Settings) -> EmailProvider:
     raise ConfigurationError(f"Email provider {settings.email_provider!r} is not implemented.")
 
 
+def build_analytics(settings: Settings) -> AnalyticsProvider:
+    """Disabled (noop) by default. PostHog needs its key from the environment."""
+    if settings.analytics_provider == "noop":
+        return NoopAnalytics()
+    if settings.analytics_provider == "fake":
+        if settings.app_env is AppEnv.PRODUCTION:
+            raise ConfigurationError("The fake analytics provider must not run in production.")
+        return RecordingAnalytics()
+    if settings.analytics_provider == "posthog":
+        key = settings.posthog_api_key
+        if key is None:
+            raise ConfigurationError("POSTHOG_API_KEY is required for the posthog provider.")
+        return PostHogAnalytics(api_key=key.get_secret_value(), host=settings.posthog_host)
+    raise ConfigurationError(f"Analytics provider {settings.analytics_provider!r} is not known.")
+
+
+def _analytics_secret(settings: Settings) -> str:
+    if settings.analytics_id_secret is not None:
+        return settings.analytics_id_secret.get_secret_value()
+    return "analytics:" + settings.jwt_secret.get_secret_value()
+
+
 def build_container(settings: Settings) -> Container:
     engine: AsyncEngine = create_engine(settings.database_url)
     redis = Redis.from_url(settings.redis_url)
@@ -77,7 +106,8 @@ def build_container(settings: Settings) -> Container:
             refresh_days=settings.refresh_token_days,
             algorithm=settings.jwt_algorithm,
         ),
-        analytics=NoopAnalytics(),
+        analytics=build_analytics(settings),
+        analytics_id_secret=_analytics_secret(settings),
         error_reporter=NoopErrorReporter(),
         email=_email(settings),
         deletion_grace_days=settings.deletion_grace_days,

@@ -32,6 +32,7 @@ export default function OnboardingLayout() {
       <Stack.Screen name="name-pet" options={{ gestureEnabled: false }} />
       <Stack.Screen name="meet-pet" options={{ gestureEnabled: false }} />
       <Stack.Screen name="how-lives-work" />
+      <Stack.Screen name="account-deleted" options={{ gestureEnabled: false }} />
     </Stack>
   );
 }

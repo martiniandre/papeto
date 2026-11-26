@@ -62,6 +62,7 @@ export default function RootLayout() {
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="meal" options={{ presentation: 'fullScreenModal' }} />
           <Stack.Screen name="meals" />
+          <Stack.Screen name="account" />
           <Stack.Screen name="pet" options={{ presentation: 'fullScreenModal' }} />
           <Stack.Screen name="premium" options={{ presentation: 'modal' }} />
         </Stack>

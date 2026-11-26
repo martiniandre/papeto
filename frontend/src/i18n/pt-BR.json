@@ -169,7 +169,74 @@
       "premium": "Premium"
     },
     "email": "E-mail",
-    "signOut": "Sair"
+    "signOut": "Sair",
+    "premiumTitle": "Conhecer o Papeto Premium",
+    "premiumBody": "Pausar o pet e mais novidades",
+    "notifications": "Avisos do pet",
+    "notificationsOn": "Ligados",
+    "notificationsOff": "Desligados",
+    "pause": "Pausar o pet",
+    "premiumTag": "Premium",
+    "timezone": "Fuso horário",
+    "export": "Exportar meus dados",
+    "deleteAccount": "Excluir conta",
+    "avatarLabel": "Foto de perfil de {{name}}"
+  },
+  "account": {
+    "on": "Ligado",
+    "off": "Desligado",
+    "notifications": {
+      "title": "Avisos do pet",
+      "howTitle": "Como os avisos chegam",
+      "example1Title": "{{name}} está com sono",
+      "example1Body": "Que tal mostrar o almoço para ele?",
+      "example2Title": "Sentimos sua falta",
+      "example2Body": "{{name}} está descansando. Volte quando puder.",
+      "mealReminder": "Lembrete de refeição",
+      "sleepy": "Quando o pet ficar com sono",
+      "weekly": "Resumo semanal",
+      "quiet": "Não incomodar",
+      "quietRange": "22:00 às 08:00",
+      "footnote": "No máximo 2 avisos por dia, sem culpa e sem falar de comida \"certa\" ou \"errada\".",
+      "deniedTitle": "Os avisos estão bloqueados no seu celular.",
+      "deniedBody": "Libere as notificações do Papeto nos Ajustes para receber os lembretes.",
+      "saveError": "Não deu para salvar a mudança. Tente de novo."
+    },
+    "export": {
+      "title": "Exportar meus dados",
+      "body": "Você recebe um arquivo com tudo o que o Papeto guarda sobre você.",
+      "contents": "O que vem no arquivo",
+      "account": "Conta e consentimentos",
+      "meals": "Refeições e descrições da IA",
+      "pet": "Pet, pontos e vidas",
+      "subscription": "Assinatura, se houver",
+      "noPhotos": "As fotos não entram: elas são apagadas logo após a avaliação.",
+      "free": "Exportar é sempre grátis.",
+      "action": "Exportar arquivo (JSON)",
+      "preparing": "Preparando o arquivo…",
+      "ready": "Arquivo pronto. Escolha onde salvar ou para quem enviar.",
+      "again": "Exportar de novo",
+      "shareTitle": "Meus dados do Papeto",
+      "failed": "Não deu para preparar o arquivo. Tente de novo."
+    },
+    "delete": {
+      "title": "Excluir sua conta?",
+      "lose": "Seu bichinho, os pontos e todo o histórico serão apagados.",
+      "grace": "Você tem 30 dias para desistir: é só entrar de novo.",
+      "exportFirst": "Antes, exportar meus dados",
+      "confirm": "Entendo que isso não pode ser desfeito depois de 30 dias",
+      "action": "Excluir conta",
+      "deleting": "Excluindo…",
+      "hint": "Marque a confirmação acima para liberar",
+      "keep": "Manter minha conta",
+      "failed": "Não deu para excluir a conta. Tente de novo."
+    },
+    "deleted": {
+      "title": "Sua conta foi excluída",
+      "body": "Apagamos tudo em 30 dias. Até lá, é só entrar de novo para desistir e recuperar o seu bichinho.",
+      "toSignIn": "Voltar para a tela de entrada",
+      "imageLabel": "Bichinho se despedindo"
+    }
   },
   "meal": {
     "types": {

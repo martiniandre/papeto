@@ -66,6 +66,21 @@ async def post_meal(
     )
 
 
+NO_ATTRIBUTES = {"strength": 0, "speed": 0, "skill": 0, "endurance": 0, "intelligence": 0}
+
+
+async def manual_meal(env: ApiEnv, headers: dict[str, str]) -> Any:
+    response = await env.client.post(
+        "/v1/meals/manual", json={"items": ["arroz"], "meal_type": "lunch"}, headers=headers
+    )
+    assert response.status_code == 201, response.text
+    return response.json()
+
+
+async def allocate(env: ApiEnv, headers: dict[str, str], body: object) -> Any:
+    return await env.client.post("/v1/pet/attributes", json=body, headers=headers)
+
+
 def assert_error(response: Any, status: int, code: str) -> None:
     assert response.status_code == status, response.text
     body = response.json()
@@ -393,6 +408,10 @@ class ApiCases:
             "streak_days": 0,
             "points": 0,
             "mood": "tired",
+            "level": 1,
+            "level_progress": {"points": 0, "current_level_at": 0, "next_level_at": 100},
+            "attributes": NO_ATTRIBUTES,
+            "unspent_attribute_points": 1,
             "events": [],
             "support_hint": False,
         }
@@ -494,6 +513,84 @@ class ApiCases:
             headers=headers,
         )
         assert_error(bad, 422, "VALIDATION_ERROR")
+
+    async def test_level_up_event_and_spending_attribute_points(self, env: ApiEnv) -> None:
+        headers = await signup(env)
+        # 3 scored meals a day x 10 points: 90 points after three days, still level 1.
+        for day in range(3):
+            if day:
+                env.next_day()
+            for _ in range(3):
+                body = await manual_meal(env, headers)
+                assert "level_up" not in body["events"]
+        assert (body["pet"]["points"], body["pet"]["level"]) == (90, 1)
+        env.next_day()
+        body = await manual_meal(env, headers)  # 100 points: level 2
+        assert "level_up" in body["events"]
+        assert body["pet"]["level"] == 2
+        assert body["pet"]["level_progress"] == {
+            "points": 100,
+            "current_level_at": 100,
+            "next_level_at": 200,
+        }
+        assert body["pet"]["unspent_attribute_points"] == 3  # 1 (level 1) + 2 (level 2)
+        pet = (await env.client.get("/v1/pet", headers=headers)).json()
+        assert "level_up" not in pet["events"]  # returned once
+
+        spent = await allocate(env, headers, {"allocations": {"strength": 2, "skill": 1}})
+        assert spent.status_code == 200, spent.text
+        assert spent.json()["attributes"] == {**NO_ATTRIBUTES, "strength": 2, "skill": 1}
+        assert spent.json()["unspent_attribute_points"] == 0
+        assert_error(
+            await allocate(env, headers, {"allocations": {"speed": 1}}),
+            400,
+            "NOT_ENOUGH_ATTRIBUTE_POINTS",
+        )
+        pet = (await env.client.get("/v1/pet", headers=headers)).json()
+        assert pet["attributes"] == {**NO_ATTRIBUTES, "strength": 2, "skill": 1}
+
+        env.next_day(3)  # fainted: level and attributes stay
+        fainted = (await env.client.get("/v1/pet", headers=headers)).json()
+        assert (fainted["lives"], fainted["level"]) == (0, 2)
+        assert fainted["attributes"] == pet["attributes"]
+        assert fainted["points"] == 100
+
+    async def test_spending_more_than_unspent_changes_nothing(self, env: ApiEnv) -> None:
+        headers = await signup(env, meal_consent=False)  # same gates as GET /pet
+        assert_error(
+            await allocate(env, headers, {"allocations": {"speed": 1, "endurance": 1}}),
+            400,
+            "NOT_ENOUGH_ATTRIBUTE_POINTS",
+        )
+        pet = (await env.client.get("/v1/pet", headers=headers)).json()
+        assert (pet["attributes"], pet["unspent_attribute_points"]) == (NO_ATTRIBUTES, 1)
+        ok = await allocate(env, headers, {"allocations": {"intelligence": 1}})
+        assert ok.status_code == 200, ok.text
+        assert ok.json()["attributes"]["intelligence"] == 1
+
+    @pytest.mark.parametrize(
+        "body",
+        [
+            {"allocations": {"luck": 1}},
+            {"allocations": {"speed": 0}},
+            {"allocations": {"speed": -1}},
+            {"allocations": {"speed": 1.5}},
+            {"allocations": {"speed": "1"}},
+            {"allocations": {"speed": True}},
+            {"allocations": {}},
+            {},
+            {"allocations": {"speed": 1}, "extra": 1},
+        ],
+    )
+    async def test_attribute_allocation_validation(self, env: ApiEnv, body: object) -> None:
+        headers = await signup(env)
+        assert_error(await allocate(env, headers, body), 422, "VALIDATION_ERROR")
+        pet = (await env.client.get("/v1/pet", headers=headers)).json()
+        assert pet["unspent_attribute_points"] == 1
+
+    async def test_attribute_allocation_needs_auth(self, env: ApiEnv) -> None:
+        response = await env.client.post("/v1/pet/attributes", json={"allocations": {"speed": 1}})
+        assert_error(response, 401, "UNAUTHORIZED")
 
     @pytest.mark.parametrize("path", ["/v1/me", "/v1/pet", "/v1/meals", "/v1/me/export"])
     async def test_protected_routes_need_auth(self, env: ApiEnv, path: str) -> None:

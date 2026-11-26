@@ -108,3 +108,8 @@ class InvalidCursor(ServiceError):
 
 
 ALL_ERRORS: tuple[type[ServiceError], ...] = tuple(ServiceError.__subclasses__())
+
+
+class NotEnoughPoints(ServiceError):
+    code = "NOT_ENOUGH_ATTRIBUTE_POINTS"
+    message = "Not enough attribute points to spend."

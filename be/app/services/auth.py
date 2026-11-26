@@ -66,6 +66,7 @@ async def register(
         state=state,
         last_seen_lives=state.lives,
         created_at=now,
+        last_seen_level=1,
     )
     async with ctx.uow_factory() as uow:
         if await uow.users.get_by_email(user.email) is not None:

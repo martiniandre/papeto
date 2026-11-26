@@ -14,10 +14,13 @@ from app.domain import (
     PetState,
     Plan,
     compute_mood,
+    level_for_points,
+    level_progress,
     local_day,
     needs_support_hint,
     pause_window_from_instants,
     settle,
+    unspent_attribute_points,
 )
 from app.ports.repositories import ConsentType, PetRecord, UnitOfWork, UserRecord
 from app.services.errors import InvalidTimezone, InvalidToken, MealConsentRequired
@@ -93,14 +96,20 @@ async def build_pet_view(
             local_day(pet.created_at, zone),
             rules,
         )
+    points = await uow.points.total(pet.user_id)
+    level = level_for_points(points, rules)
     return PetView(
         name=pet.name,
         color=pet.color,
         lives=state.lives,
         max_lives=rules.max_lives,
         streak_days=state.streak_days,
-        points=await uow.points.total(pet.user_id),
+        points=points,
         mood=compute_mood(state, today, now),
+        level=level,
+        level_progress=level_progress(points, rules),
+        attributes=pet.attributes,
+        unspent_attribute_points=unspent_attribute_points(level, pet.attributes),
         events=events,
         support_hint=support_hint,
     )

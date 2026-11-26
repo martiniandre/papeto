@@ -275,7 +275,7 @@ class ApiCases:
         headers = await signup(env)
         pet = (await env.client.get("/v1/pet", headers=headers)).json()
         assert pet == {
-            "name": "Bolinha",
+            "name": None,  # unnamed until screen 43
             "color": "default",
             "lives": 2,
             "max_lives": 4,
@@ -284,11 +284,15 @@ class ApiCases:
             "mood": "tired",
             "events": [],
         }
-        assert_error(
-            await env.client.patch("/v1/pet", json={"name": "x" * 21}, headers=headers),
-            422,
-            "VALIDATION_ERROR",
-        )
+        for bad_name in ("x" * 21, "", "   "):
+            assert_error(
+                await env.client.patch("/v1/pet", json={"name": bad_name}, headers=headers),
+                422,
+                "VALIDATION_ERROR",
+            )
+        assert (await env.client.get("/v1/pet", headers=headers)).json()["name"] is None
+        named = await env.client.patch("/v1/pet", json={"name": "x" * 20}, headers=headers)
+        assert named.json()["name"] == "x" * 20
         renamed = await env.client.patch(
             "/v1/pet", json={"name": "Pipoca", "color": "blue"}, headers=headers
         )

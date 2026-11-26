@@ -72,7 +72,7 @@ class PetModel(Base):
     user_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), unique=True
     )
-    name: Mapped[str] = mapped_column(String(20))
+    name: Mapped[str | None] = mapped_column(String(20))  # None until the user names it
     color: Mapped[str] = mapped_column(String(20))
     lives: Mapped[int] = mapped_column(Integer)
     streak_days: Mapped[int] = mapped_column(Integer)

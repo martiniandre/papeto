@@ -53,7 +53,7 @@ class ConsentRecord:
 class PetRecord:
     id: UUID
     user_id: UUID
-    name: str
+    name: str | None  # None until the user names the pet (screen 43)
     color: str
     state: PetState
     last_seen_lives: int | None

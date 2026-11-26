@@ -32,6 +32,7 @@ async def test_register_creates_pet_with_two_lives_and_rejects_duplicates() -> N
     user_id = await make_user(world, meal_consent=False)
     pet = await get_pet(world.ctx, user_id)
     assert (pet.lives, pet.max_lives, pet.points, pet.mood) == (2, 4, 0, Mood.TIRED)
+    assert pet.name is None  # the user names the pet on screen 43
     with pytest.raises(EmailAlreadyRegistered):
         await make_user(world, meal_consent=False)
 

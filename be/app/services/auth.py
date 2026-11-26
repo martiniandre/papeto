@@ -17,7 +17,6 @@ from app.services.errors import (
 )
 from app.services.views import TokenPair
 
-DEFAULT_PET_NAME = "Bolinha"
 DEFAULT_PET_COLOR = "default"
 
 
@@ -61,7 +60,7 @@ async def register(
     pet = PetRecord(
         id=ctx.ids.new_id(),
         user_id=user.id,
-        name=DEFAULT_PET_NAME,
+        name=None,  # the user names the pet on screen 43
         color=DEFAULT_PET_COLOR,
         state=state,
         last_seen_lives=state.lives,

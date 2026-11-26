@@ -68,7 +68,7 @@ class MePatch(BaseModel):
 
 
 class ExportPet(BaseModel):
-    name: str
+    name: str | None
     color: str
     lives: int
     streak_days: int

@@ -35,6 +35,7 @@ class Settings(BaseSettings):
     # Adapter selection: "fake" works offline; real adapters are not implemented yet.
     vision_provider: str = "fake"
     payment_provider: str = "fake"
+    push_provider: str = "fake"  # "fake" or "expo"
     vision_api_key: SecretStr | None = None
     stripe_secret_key: SecretStr | None = None
     stripe_webhook_secret: SecretStr | None = None

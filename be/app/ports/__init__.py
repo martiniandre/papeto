@@ -7,7 +7,7 @@ from app.ports.email import EmailProvider
 from app.ports.errors import ErrorReporter
 from app.ports.ids import IdGenerator
 from app.ports.payment import PaymentProvider
-from app.ports.push import PushProvider
+from app.ports.push import PushOutcome, PushProvider, PushUnavailableError
 from app.ports.storage import StorageProvider
 from app.ports.vision import (
     FoodVisionProvider,
@@ -31,7 +31,9 @@ __all__ = [
     "NotFoodError",
     "PaymentProvider",
     "PhotoNotReadableError",
+    "PushOutcome",
     "PushProvider",
+    "PushUnavailableError",
     "StorageProvider",
     "TokenKind",
     "VisionResult",

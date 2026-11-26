@@ -12,8 +12,9 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from app.config import AppEnv, Settings
 from app.db.session import SqlUowFactory, create_engine
-from app.ports import FoodVisionProvider
-from app.providers.fake_misc import NoopAnalytics, NoopErrorReporter
+from app.ports import FoodVisionProvider, PushProvider
+from app.providers.expo_push import ExpoPushProvider
+from app.providers.fake_misc import NoopAnalytics, NoopErrorReporter, RecordingPush
 from app.providers.fake_vision import FakeFoodVision
 from app.providers.local_auth import LocalAuthProvider
 from app.providers.system_clock import SystemClock, UuidGenerator
@@ -37,6 +38,17 @@ def _vision(settings: Settings) -> FoodVisionProvider:
             raise ConfigurationError("The fake vision provider must not run in production.")
         return FakeFoodVision()
     raise ConfigurationError(f"Vision provider {settings.vision_provider!r} is not implemented.")
+
+
+def build_push(settings: Settings) -> PushProvider:
+    if settings.push_provider == "expo":
+        token = settings.expo_access_token
+        return ExpoPushProvider(access_token=token.get_secret_value() if token else None)
+    if settings.push_provider == "fake":
+        if settings.app_env is AppEnv.PRODUCTION:
+            raise ConfigurationError("The fake push provider must not run in production.")
+        return RecordingPush()
+    raise ConfigurationError(f"Push provider {settings.push_provider!r} is not implemented.")
 
 
 def build_container(settings: Settings) -> Container:

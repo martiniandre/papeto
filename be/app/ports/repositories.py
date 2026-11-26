@@ -13,7 +13,14 @@ from types import TracebackType
 from typing import Protocol, Self
 from uuid import UUID
 
-from app.domain import DEFAULT_PREFS, NoticeKind, NotificationPrefs, PetState, PointsReason
+from app.domain import (
+    DEFAULT_PREFS,
+    Attributes,
+    NoticeKind,
+    NotificationPrefs,
+    PetState,
+    PointsReason,
+)
 
 
 class ConsentType(StrEnum):
@@ -65,6 +72,9 @@ class PetRecord:
     state: PetState
     last_seen_lives: int | None
     created_at: datetime
+    # Spent attribute points (permanent in the MVP) and the last level returned to the client.
+    attributes: Attributes = field(default_factory=Attributes)
+    last_seen_level: int | None = None
 
 
 @dataclass(frozen=True, slots=True)

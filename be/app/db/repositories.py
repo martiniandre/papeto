@@ -11,7 +11,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import models as m
-from app.domain import NoticeKind, NotificationPrefs, PetState, PointsReason
+from app.domain import Attributes, NoticeKind, NotificationPrefs, PetState, PointsReason
 from app.ports.repositories import (
     ConsentRecord,
     ConsentType,
@@ -174,6 +174,14 @@ def _pet(row: m.PetModel) -> PetRecord:
         ),
         last_seen_lives=row.last_seen_lives,
         created_at=row.created_at,
+        attributes=Attributes(
+            strength=row.attr_strength,
+            speed=row.attr_speed,
+            skill=row.attr_skill,
+            endurance=row.attr_endurance,
+            intelligence=row.attr_intelligence,
+        ),
+        last_seen_level=row.last_seen_level,
     )
 
 
@@ -186,6 +194,12 @@ def _apply_pet(row: m.PetModel, pet: PetRecord) -> None:
     row.settled_on = pet.state.settled_on
     row.rest_until = pet.state.rest_until
     row.last_seen_lives = pet.last_seen_lives
+    row.attr_strength = pet.attributes.strength
+    row.attr_speed = pet.attributes.speed
+    row.attr_skill = pet.attributes.skill
+    row.attr_endurance = pet.attributes.endurance
+    row.attr_intelligence = pet.attributes.intelligence
+    row.last_seen_level = pet.last_seen_level
 
 
 class SqlPetRepository:

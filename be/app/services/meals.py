@@ -79,7 +79,7 @@ async def get_meal(ctx: ServiceContext, user_id: UUID, meal_id: UUID) -> MealRec
     return meal
 
 
-def _clean_items(items: list[str]) -> list[str]:
+def clean_items(items: list[str]) -> list[str]:
     cleaned = [item.strip() for item in items]
     if len(cleaned) > MAX_ITEMS or any(not 0 < len(item) <= MAX_ITEM_LENGTH for item in cleaned):
         raise ValidationFailed(
@@ -96,7 +96,7 @@ async def update_meal(
     items: list[str] | None,
     meal_type: MealType | None,
 ) -> MealRecord:
-    cleaned = _clean_items(items) if items is not None else None
+    cleaned = clean_items(items) if items is not None else None
     async with ctx.uow_factory() as uow:
         await require_user(uow, user_id)
         await require_meal_consent(uow, user_id)

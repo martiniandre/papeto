@@ -90,6 +90,7 @@ class ExportMeal(BaseModel):
     items: list[str]
     food_groups: list[str]
     colors: list[str]
+    source: str
     deleted_at: datetime | None
 
 
@@ -164,6 +165,7 @@ class ExportResponse(BaseModel):
                     items=m.items,
                     food_groups=m.food_groups,
                     colors=m.colors,
+                    source=m.source.value,
                     deleted_at=m.deleted_at,
                 )
                 for m in data.meals

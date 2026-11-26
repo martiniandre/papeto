@@ -112,6 +112,7 @@ class MealLogModel(Base):
     confidence: Mapped[float] = mapped_column(Float)
     plate_share: Mapped[dict[str, float]] = mapped_column(JSON)
     new_foods: Mapped[list[str]] = mapped_column(JSON)
+    source: Mapped[str] = mapped_column(String(16), default="photo")  # photo | manual
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
@@ -157,7 +158,12 @@ class PushTokenModel(Base):
 
 
 class DailyUsageModel(Base):
-    """Successful photo analyses per user and local day (failed analyses are never counted)."""
+    """Logs per user and local day.
+
+    `analyses` counts successful photo analyses (the AI limit; failed ones are never counted).
+    `manual_logs` counts meals entered by hand (RF-95): they make the day a logged day but never
+    consume the AI limit.
+    """
 
     __tablename__ = "daily_usage"
 
@@ -166,6 +172,7 @@ class DailyUsageModel(Base):
     )
     local_day: Mapped[date] = mapped_column(Date, primary_key=True)
     analyses: Mapped[int] = mapped_column(Integer, default=0)
+    manual_logs: Mapped[int] = mapped_column(Integer, default=0)
 
 
 class SubscriptionModel(Base):

@@ -22,6 +22,11 @@ class ConsentType(StrEnum):
     ANALYTICS = "analytics"
 
 
+class MealSource(StrEnum):
+    PHOTO = "photo"  # described by the vision provider
+    MANUAL = "manual"  # items chosen by hand when the photo could not be read (RF-95)
+
+
 class DuplicateEmailError(Exception):
     """Raised by `UserRepository.add` when the email is already registered."""
 
@@ -84,6 +89,7 @@ class MealRecord:
     plate_share: dict[str, float]
     new_foods: list[str]
     deleted_at: datetime | None = None
+    source: MealSource = MealSource.PHOTO
 
 
 @dataclass(frozen=True, slots=True)
@@ -212,11 +218,20 @@ class PointsRepository(Protocol):
 
 class UsageRepository(Protocol):
     async def count(self, user_id: UUID, day: date) -> int:
-        """Successful analyses on a local day."""
+        """Successful photo analyses on a local day (the AI limit). Manual logs never count."""
         ...
 
-    async def increment(self, user_id: UUID, day: date) -> None: ...
-    async def logged_days(self, user_id: UUID) -> set[date]: ...
+    async def increment(self, user_id: UUID, day: date) -> None:
+        """Record one successful photo analysis."""
+        ...
+
+    async def increment_manual(self, user_id: UUID, day: date) -> None:
+        """Record one manual log: a logged day that does not consume the AI limit."""
+        ...
+
+    async def logged_days(self, user_id: UUID) -> set[date]:
+        """Days with at least one photo analysis or manual log."""
+        ...
 
 
 class PasswordResetRepository(Protocol):

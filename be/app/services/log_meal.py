@@ -1,19 +1,23 @@
-"""Log a meal from a photo.
+"""Log a meal, from a photo or by hand (RF-95).
 
-Flow: consent -> daily limit -> vision -> register_log -> persist meal, pet, points and usage.
+Photo flow: consent -> daily limit -> vision -> register_log -> persist meal, pet, points and usage.
 A failed analysis raises before anything is written, so it never consumes the limit and never
 changes lives. The photo bytes only live inside this function call: they are not stored or logged.
+
+Manual flow: consent -> register_log -> persist. Same pet and points rules as a photo log, but it
+never calls the vision provider and never consumes the AI photo limit.
 """
 
 from __future__ import annotations
 
 from dataclasses import replace
-from datetime import timedelta
+from datetime import date, datetime, timedelta
 from uuid import UUID
+from zoneinfo import ZoneInfo
 
 from app.domain import PointsReason, can_analyze_photo, register_log
-from app.ports import NotFoodError, PhotoNotReadableError, VisionUnavailableError
-from app.ports.repositories import MealRecord, PointsEventRecord
+from app.ports import MealType, NotFoodError, PhotoNotReadableError, VisionUnavailableError
+from app.ports.repositories import MealRecord, MealSource, PointsEventRecord, UnitOfWork
 from app.services.common import (
     build_pet_view,
     current_plan,
@@ -27,13 +31,55 @@ from app.services.errors import (
     DailyLimitReached,
     NotFood,
     PhotoNotReadable,
+    ValidationFailed,
     VisionUnavailable,
 )
 from app.services.get_pet import load_pet
+from app.services.meals import clean_items
 from app.services.views import LogMealResult
 
 DEFAULT_LANGUAGE = "pt-BR"
 NEW_FOODS_WINDOW_DAYS = 30
+MANUAL_CONFIDENCE = 1.0  # the user chose the items; there is no model uncertainty
+
+
+async def _persist_log(
+    ctx: ServiceContext,
+    uow: UnitOfWork,
+    user_id: UUID,
+    *,
+    today: date,
+    now: datetime,
+    zone: ZoneInfo,
+    meal: MealRecord,
+) -> LogMealResult:
+    """Apply the pet log transition and save meal, points and pet. The caller records usage."""
+    pet = await load_pet(uow, user_id)
+    logged_days = await uow.usage.logged_days(user_id)
+    windows = await pause_windows(uow, user_id, zone)
+    scored = await uow.points.count_on_day(user_id, PointsReason.MEAL_LOGGED, today)
+    outcome = register_log(pet.state, logged_days, windows, today, scored, ctx.rules)
+
+    seen = await uow.meals.recent_items(user_id, today - timedelta(days=NEW_FOODS_WINDOW_DAYS))
+    meal = replace(meal, new_foods=[item for item in meal.items if item.lower() not in seen])
+    await uow.meals.add(meal)
+    await uow.points.add_many(
+        [
+            PointsEventRecord(
+                id=ctx.ids.new_id(),
+                user_id=user_id,
+                reason=award.reason,
+                amount=award.amount,
+                local_day=today,
+                created_at=now,
+            )
+            for award in outcome.points
+        ]
+    )
+    saved = replace(pet, state=outcome.pet, last_seen_lives=outcome.pet.lives)
+    await uow.pets.save(saved)
+    view = await build_pet_view(uow, saved, outcome.pet, today, now, (), ctx.rules)
+    return LogMealResult(meal=meal, pet=view, events=outcome.events)
 
 
 async def log_meal(
@@ -63,17 +109,9 @@ async def log_meal(
     async with ctx.uow_factory() as uow:
         now = ctx.clock.now()
         today = ctx.clock.today(zone)
-        pet = await load_pet(uow, user_id)
+        await load_pet(uow, user_id)  # take the pet row lock before re-reading usage
         if not can_analyze_photo(plan, await uow.usage.count(user_id, today), ctx.rules):
             raise DailyLimitReached
-
-        logged_days = await uow.usage.logged_days(user_id)
-        windows = await pause_windows(uow, user_id, zone)
-        scored = await uow.points.count_on_day(user_id, PointsReason.MEAL_LOGGED, today)
-        outcome = register_log(pet.state, logged_days, windows, today, scored, ctx.rules)
-
-        seen = await uow.meals.recent_items(user_id, today - timedelta(days=NEW_FOODS_WINDOW_DAYS))
-        new_foods = [item for item in vision.items if item.lower() not in seen]
         meal = MealRecord(
             id=ctx.ids.new_id(),
             user_id=user_id,
@@ -87,25 +125,45 @@ async def log_meal(
             colors=list(vision.colors),
             confidence=vision.confidence,
             plate_share=dict(vision.plate_share),
-            new_foods=new_foods,
+            new_foods=[],
+            source=MealSource.PHOTO,
         )
-        await uow.meals.add(meal)
+        result = await _persist_log(ctx, uow, user_id, today=today, now=now, zone=zone, meal=meal)
         await uow.usage.increment(user_id, today)
-        await uow.points.add_many(
-            [
-                PointsEventRecord(
-                    id=ctx.ids.new_id(),
-                    user_id=user_id,
-                    reason=award.reason,
-                    amount=award.amount,
-                    local_day=today,
-                    created_at=now,
-                )
-                for award in outcome.points
-            ]
-        )
-        saved = replace(pet, state=outcome.pet, last_seen_lives=outcome.pet.lives)
-        await uow.pets.save(saved)
-        view = await build_pet_view(uow, saved, outcome.pet, today, now, (), ctx.rules)
         await uow.commit()
-    return LogMealResult(meal=meal, pet=view, events=outcome.events)
+    return result
+
+
+async def log_manual_meal(
+    ctx: ServiceContext, user_id: UUID, *, items: list[str], meal_type: MealType
+) -> LogMealResult:
+    """RF-95: register a meal from items chosen by hand. Never touches the AI photo limit."""
+    cleaned = clean_items(items)
+    if not cleaned:
+        raise ValidationFailed("Choose at least one item.")
+    async with ctx.uow_factory() as uow:
+        user = await require_user(uow, user_id)
+        await require_meal_consent(uow, user_id)
+        zone = parse_timezone(user.timezone)
+        now = ctx.clock.now()
+        today = ctx.clock.today(zone)
+        meal = MealRecord(
+            id=ctx.ids.new_id(),
+            user_id=user_id,
+            logged_at=now,
+            local_day=today,
+            meal_type=meal_type.value,
+            description="",
+            items=cleaned,
+            food_groups=[],
+            item_count=len(cleaned),
+            colors=[],
+            confidence=MANUAL_CONFIDENCE,
+            plate_share={},
+            new_foods=[],
+            source=MealSource.MANUAL,
+        )
+        result = await _persist_log(ctx, uow, user_id, today=today, now=now, zone=zone, meal=meal)
+        await uow.usage.increment_manual(user_id, today)
+        await uow.commit()
+    return result

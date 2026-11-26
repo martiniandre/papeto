@@ -240,7 +240,61 @@ class ApiCases:
         assert body["pet"]["mood"] == "happy"
         assert body["pet"]["streak_days"] == 1
         assert body["events"] == []
+        assert body["meal"]["source"] == "photo"
         assert not FORBIDDEN_KEYS & keys_of(body)
+
+    async def test_manual_meal_after_unreadable_photo(self, env: ApiEnv) -> None:
+        headers = await signup(env)
+        assert_error(await post_meal(env, headers, b""), 422, "PHOTO_NOT_READABLE")
+        response = await env.client.post(
+            "/v1/meals/manual",
+            json={"items": ["arroz", "feijão"], "meal_type": "lunch"},
+            headers=headers,
+        )
+        assert response.status_code == 201, response.text
+        body = response.json()
+        assert set(body) == {"meal", "pet", "events"}
+        assert body["meal"]["source"] == "manual"
+        assert body["meal"]["items"] == ["arroz", "feijão"]
+        assert body["meal"]["meal_type"] == "lunch"
+        assert (body["pet"]["points"], body["pet"]["mood"]) == (10, "happy")
+        assert not FORBIDDEN_KEYS & keys_of(body)
+        meal_id = body["meal"]["id"]
+        got = (await env.client.get(f"/v1/meals/{meal_id}", headers=headers)).json()
+        assert got == body["meal"]
+        # The AI photo limit is untouched: two photos still go through.
+        assert (await post_meal(env, headers, b"one")).status_code == 201
+        assert (await post_meal(env, headers, b"two")).status_code == 201
+        assert_error(await post_meal(env, headers, b"three"), 429, "DAILY_LIMIT_REACHED")
+        env.next_day()
+        pet = (await env.client.get("/v1/pet", headers=headers)).json()
+        assert (pet["lives"], pet["streak_days"]) == (2, 1)
+
+    async def test_manual_meal_validation_and_consent(self, env: ApiEnv) -> None:
+        headers = await signup(env, meal_consent=False)
+        body = {"items": ["ovo"], "meal_type": "breakfast"}
+        assert_error(
+            await env.client.post("/v1/meals/manual", json=body, headers=headers),
+            403,
+            "MEAL_CONSENT_REQUIRED",
+        )
+        await env.client.post(
+            "/v1/consents",
+            json={"type": "meal_data", "version": "1.0", "accepted": True},
+            headers=headers,
+        )
+        for bad in (
+            {"items": [], "meal_type": "lunch"},
+            {"items": ["   "], "meal_type": "lunch"},
+            {"items": ["ovo"], "meal_type": "brunch"},
+            {"items": ["ovo"], "meal_type": "lunch", "calories": 100},
+        ):
+            assert_error(
+                await env.client.post("/v1/meals/manual", json=bad, headers=headers),
+                422,
+                "VALIDATION_ERROR",
+            )
+        assert_error(await env.client.post("/v1/meals/manual", json=body), 401, "UNAUTHORIZED")
 
     async def test_daily_limit_and_failed_analysis_do_not_cost_lives(self, env: ApiEnv) -> None:
         headers = await signup(env)

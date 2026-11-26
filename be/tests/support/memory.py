@@ -36,6 +36,7 @@ class MemoryStore:
     meals: dict[UUID, MealRecord] = field(default_factory=dict)
     points: list[PointsEventRecord] = field(default_factory=list)
     usage: dict[tuple[UUID, date], int] = field(default_factory=dict)
+    manual_logs: dict[tuple[UUID, date], int] = field(default_factory=dict)
     password_resets: dict[str, PasswordResetRecord] = field(default_factory=dict)  # by hash
     push_tokens: dict[str, PushTokenRecord] = field(default_factory=dict)
     subscriptions: dict[UUID, SubscriptionRecord] = field(default_factory=dict)
@@ -183,8 +184,12 @@ class MemUsage:
     async def increment(self, user_id: UUID, day: date) -> None:
         self.s.usage[(user_id, day)] = self.s.usage.get((user_id, day), 0) + 1
 
+    async def increment_manual(self, user_id: UUID, day: date) -> None:
+        self.s.manual_logs[(user_id, day)] = self.s.manual_logs.get((user_id, day), 0) + 1
+
     async def logged_days(self, user_id: UUID) -> set[date]:
-        return {day for (uid, day), n in self.s.usage.items() if uid == user_id and n > 0}
+        counts = (*self.s.usage.items(), *self.s.manual_logs.items())
+        return {day for (uid, day), n in counts if uid == user_id and n > 0}
 
 
 class MemPasswordResets:

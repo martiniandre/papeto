@@ -6,6 +6,7 @@ suite is added with the first adapter.
 
 from __future__ import annotations
 
+import base64
 import json
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
@@ -39,6 +40,7 @@ from app.providers.fake_misc import NoopAnalytics, NoopErrorReporter, RecordingE
 from app.providers.fake_vision import FakeFoodVision
 from app.providers.local_auth import LocalAuthProvider
 from app.providers.system_clock import SystemClock, UuidGenerator
+from app.providers.vision_provider import OpenAICompatibleVision
 
 START = datetime(2026, 3, 10, 12, 0, tzinfo=UTC)
 SAO_PAULO = ZoneInfo("America/Sao_Paulo")
@@ -84,7 +86,48 @@ def test_ids_are_unique_uuids(make: Callable[[], IdGenerator]) -> None:
 
 # --- FoodVisionProvider ----------------------------------------------------------------------
 
-VISIONS: list[Callable[[], FoodVisionProvider]] = [FakeFoodVision]
+
+def _mock_vision_answer(request: httpx.Request) -> httpx.Response:
+    """A stand-in vision server: answers from the image bytes the adapter sent."""
+    body = json.loads(request.content)
+    url = body["messages"][1]["content"][1]["image_url"]["url"]
+    image = base64.b64decode(url.split(",", 1)[1])
+    if image.startswith(b"UNAVAILABLE"):
+        return httpx.Response(503, json={"error": "overloaded"})
+    status = "unreadable" if not image else "not_food" if image.startswith(b"NOTFOOD") else "ok"
+    answer = {
+        "status": status,
+        "description": "Arroz, feijão e salada verde.",
+        "items": ["arroz", "feijão", "salada"],
+        "meal_type": "lunch",
+        "food_groups": ["grains", "legumes", "vegetables"],
+        "item_count": 3,
+        "colors": ["white", "brown", "green"],
+        "confidence": 0.9,
+        "plate_share": {"grains": 0.4, "legumes": 0.3, "vegetables": 0.3},
+    }
+    content = json.dumps(answer, ensure_ascii=False)
+    return httpx.Response(200, json={"choices": [{"message": {"content": content}}]})
+
+
+def _http_vision() -> FoodVisionProvider:
+    return OpenAICompatibleVision(
+        api_key="test-key",
+        model="test-model",
+        base_url="https://vision.invalid/v1",
+        transport=httpx.MockTransport(_mock_vision_answer),
+    )
+
+
+VISIONS: list[Callable[[], FoodVisionProvider]] = [FakeFoodVision, _http_vision]
+
+
+@pytest.mark.parametrize("make", VISIONS)
+def test_vision_says_who_answers(make: Callable[[], FoodVisionProvider]) -> None:
+    vision = make()
+    assert vision.provider_name
+    assert vision.model_version
+    assert vision.prompt_version is None or vision.prompt_version.startswith("meal-v")
 
 
 @pytest.mark.parametrize("make", VISIONS)

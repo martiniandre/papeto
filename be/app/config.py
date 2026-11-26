@@ -37,7 +37,10 @@ class Settings(BaseSettings):
     payment_provider: str = "fake"
     push_provider: str = "fake"  # "fake" or "expo"
     email_provider: str = "fake"
+    # Vision: "fake" (default) or "openai_compatible" (candidate adapter, provider not chosen yet).
     vision_api_key: SecretStr | None = None
+    vision_model: str | None = None
+    vision_base_url: str | None = None
     stripe_secret_key: SecretStr | None = None
     stripe_webhook_secret: SecretStr | None = None
     sentry_dsn: SecretStr | None = None

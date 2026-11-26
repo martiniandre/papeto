@@ -18,6 +18,8 @@ from app.providers.fake_misc import NoopAnalytics, NoopErrorReporter, RecordingE
 from app.providers.fake_vision import FakeFoodVision
 from app.providers.local_auth import LocalAuthProvider
 from app.providers.system_clock import SystemClock, UuidGenerator
+from app.providers.vision_provider import PROVIDER_NAME as OPENAI_COMPATIBLE
+from app.providers.vision_provider import OpenAICompatibleVision
 from app.services.context import ServiceContext
 from app.vision import VisionPipeline
 
@@ -39,6 +41,22 @@ def build_vision_adapter(settings: Settings) -> FoodVisionProvider:
         if settings.app_env is AppEnv.PRODUCTION:
             raise ConfigurationError("The fake vision provider must not run in production.")
         return FakeFoodVision()
+    if settings.vision_provider == OPENAI_COMPATIBLE:
+        key = settings.vision_api_key.get_secret_value() if settings.vision_api_key else ""
+        model = settings.vision_model or ""
+        base_url = settings.vision_base_url or ""
+        required = (("VISION_API_KEY", key), ("VISION_MODEL", model), ("VISION_BASE_URL", base_url))
+        missing = [name for name, value in required if not value]
+        if missing:
+            raise ConfigurationError(f"Vision provider needs {', '.join(missing)}.")
+        if settings.app_env is AppEnv.PRODUCTION and not base_url.startswith("https://"):
+            raise ConfigurationError("VISION_BASE_URL must use https in production.")
+        return OpenAICompatibleVision(
+            api_key=key,
+            model=model,
+            base_url=base_url,
+            timeout_seconds=settings.vision_timeout_seconds,
+        )
     raise ConfigurationError(f"Vision provider {settings.vision_provider!r} is not implemented.")
 
 
@@ -110,6 +128,8 @@ def build_container(settings: Settings) -> Container:
         return checks
 
     async def shutdown() -> None:
+        if isinstance(vision.inner, OpenAICompatibleVision):
+            await vision.inner.aclose()
         await redis.aclose()
         await engine.dispose()
 

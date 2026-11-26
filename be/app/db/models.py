@@ -122,6 +122,9 @@ class MealLogModel(Base):
     plate_share: Mapped[dict[str, float]] = mapped_column(JSON)
     new_foods: Mapped[list[str]] = mapped_column(JSON)
     source: Mapped[str] = mapped_column(String(16), default="photo")  # photo | manual
+    vision_provider: Mapped[str | None] = mapped_column(String(32))
+    model_version: Mapped[str | None] = mapped_column(String(100))
+    prompt_version: Mapped[str | None] = mapped_column(String(32))
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 

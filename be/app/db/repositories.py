@@ -270,6 +270,9 @@ def _meal(row: m.MealLogModel) -> MealRecord:
         new_foods=list(row.new_foods),
         deleted_at=row.deleted_at,
         source=MealSource(row.source),
+        vision_provider=row.vision_provider,
+        model_version=row.model_version,
+        prompt_version=row.prompt_version,
     )
 
 
@@ -287,6 +290,9 @@ def _apply_meal(row: m.MealLogModel, meal: MealRecord) -> None:
     row.new_foods = list(meal.new_foods)
     row.deleted_at = meal.deleted_at
     row.source = meal.source.value
+    row.vision_provider = meal.vision_provider
+    row.model_version = meal.model_version
+    row.prompt_version = meal.prompt_version
 
 
 class SqlMealRepository:

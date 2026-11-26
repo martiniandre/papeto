@@ -136,6 +136,9 @@ async def log_meal(
             plate_share=dict(vision.plate_share),
             new_foods=[],
             source=MealSource.PHOTO,
+            vision_provider=ctx.vision.provider_name,
+            model_version=ctx.vision.model_version,
+            prompt_version=ctx.vision.prompt_version,
         )
         result = await _persist_log(ctx, uow, user_id, today=today, now=now, zone=zone, meal=meal)
         await uow.usage.increment(user_id, today)

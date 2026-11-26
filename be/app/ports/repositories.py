@@ -92,6 +92,10 @@ class MealRecord:
     new_foods: list[str]
     deleted_at: datetime | None = None
     source: MealSource = MealSource.PHOTO
+    # Who analyzed the photo (None for manual meals and rows from before migration 0008).
+    vision_provider: str | None = None
+    model_version: str | None = None
+    prompt_version: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

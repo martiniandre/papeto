@@ -16,6 +16,7 @@ export default {
         background: colors.background,
         surface: colors.surface,
         'on-primary': colors.onPrimary,
+        danger: colors.danger,
         ink: colors.text,
         'ink-secondary': colors.textSecondary,
         'input-border': colors.inputBorder,

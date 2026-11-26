@@ -6,6 +6,11 @@ export function localDayKey(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
+/** True when the ISO timestamp falls on the same local day as `now`. */
+export function isSameLocalDay(iso: string, now = new Date()): boolean {
+  return localDayKey(new Date(iso)) === localDayKey(now);
+}
+
 /** Short time for meal cards, e.g. "12:30" or "12/03, 12:30". */
 export function formatMealTime(iso: string, now = new Date()): string {
   const date = new Date(iso);

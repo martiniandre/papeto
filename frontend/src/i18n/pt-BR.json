@@ -153,9 +153,14 @@
       "7d": "7 dias",
       "30d": "30 dias"
     },
-    "empty": "Nenhuma refeição registrada neste período.",
+    "emptyTitle": "Nenhuma refeição ainda",
+    "empty": "Sua primeira foto aparece aqui.",
     "emptyCta": "Registrar refeição",
-    "loadMore": "Ver mais"
+    "loadMore": "Ver mais",
+    "deleted": "Refeição apagada",
+    "undo": "Desfazer",
+    "deleteFailed": "Não deu para apagar a refeição. Ela voltou para o histórico.",
+    "openMeal": "Abrir detalhes"
   },
   "profile": {
     "title": "Perfil",
@@ -238,6 +243,48 @@
       "body": "Avisamos quando {{name}} estiver esperando um registro.",
       "allow": "Permitir notificações"
     },
+    "typesShort": {
+      "breakfast": "Café",
+      "lunch": "Almoço",
+      "dinner": "Jantar",
+      "snack": "Lanche"
+    },
+    "detail": {
+      "title": "Detalhe da refeição",
+      "photoDiscarded": "A foto foi apagada após a avaliação",
+      "about": "Sobre este prato",
+      "items": "Itens",
+      "groups": "Grupos de alimentos",
+      "itemCount_one": "{{count}} item",
+      "itemCount_other": "{{count}} itens",
+      "colorCount_one": "{{count}} cor",
+      "colorCount_other": "{{count}} cores",
+      "when": "Quando",
+      "type": "Tipo",
+      "today": "Hoje, {{time}}",
+      "edit": "Corrigir",
+      "delete": "Apagar"
+    },
+    "edit": {
+      "title": "Corrigir refeição",
+      "body": "A IA pode errar. Ajuste o que ela viu; os pontos não mudam.",
+      "typeLabel": "Tipo",
+      "itemsLabel": "O que tinha no prato",
+      "addLabel": "Novo item",
+      "addPlaceholder": "Ex.: arroz",
+      "add": "Adicionar item",
+      "removeItem": "Remover {{item}}",
+      "save": "Salvar",
+      "saving": "Salvando…",
+      "saveError": "Não deu para salvar. Tente de novo.",
+      "noItems": "Deixe pelo menos um item."
+    },
+    "delete": {
+      "title": "Apagar esta refeição?",
+      "body": "A refeição sai do seu histórico. Pontos e vidas não mudam.",
+      "confirm": "Apagar refeição",
+      "keep": "Manter"
+    },
     "consentRequired": "Para analisar fotos, precisamos da sua autorização."
   },
   "errors": {
@@ -251,6 +298,7 @@
     "PHOTO_NOT_READABLE": "A foto ficou escura ou tremida.",
     "NOT_FOOD": "Parece que esta foto não é de um prato.",
     "VISION_UNAVAILABLE": "Nosso analisador está com problemas agora.",
-    "PREMIUM_REQUIRED": "Disponível no Premium."
+    "PREMIUM_REQUIRED": "Disponível no Premium.",
+    "MEAL_NOT_FOUND": "Esta refeição não está mais no histórico."
   }
 }

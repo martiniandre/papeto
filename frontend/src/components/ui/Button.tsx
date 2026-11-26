@@ -22,6 +22,7 @@ const rootStyle = tva({
       primary: 'bg-primary data-[active=true]:opacity-90',
       secondary: 'bg-surface border-2 border-primary',
       ghost: 'bg-transparent',
+      danger: 'bg-danger data-[active=true]:opacity-90',
     },
     isDisabled: { true: 'opacity-50' },
   },
@@ -34,6 +35,7 @@ const textStyle = tva({
       primary: 'text-on-primary',
       secondary: 'text-primary',
       ghost: 'text-primary',
+      danger: 'text-on-primary',
     },
   },
 });
@@ -43,7 +45,7 @@ function ButtonLabel({ children }: { children: ReactNode }) {
   return <UIButton.Text className={textStyle({ parentVariants: { action } })}>{children}</UIButton.Text>;
 }
 
-type Action = 'primary' | 'secondary' | 'ghost';
+type Action = 'primary' | 'secondary' | 'ghost' | 'danger';
 
 export interface ButtonProps {
   label: string;

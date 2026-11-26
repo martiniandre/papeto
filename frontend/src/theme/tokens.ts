@@ -12,6 +12,8 @@ export const colors = {
   pointsText: '#4A3410',
   surface: '#FFFFFF',
   onPrimary: '#FFFFFF',
+  /** Destructive actions (delete). White text on it is 6.5:1. */
+  danger: '#B42318',
 } as const;
 
 export const spacing = {

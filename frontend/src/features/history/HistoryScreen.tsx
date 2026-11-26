@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { FlatList, Pressable, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -13,18 +14,25 @@ import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/ui/Icon';
 import { Text } from '@/components/ui/Text';
 import { useStartMealLog } from '@/features/meal/useStartMealLog';
+
 import { colors } from '@/theme/tokens';
 import { cn } from '@/utils/cn';
 
+import { UndoSnackbar } from './UndoSnackbar';
+import { usePendingDeleteStore } from './pendingDelete';
+
 const RANGES: MealRange[] = ['today', '7d', '30d'];
 
-/** Screen 7 (empty: 14). Meal detail and delete belong to flow 3. */
+/** Screen 7, empty state 14, and 42 ("Refeição apagada" + Desfazer for 5 s). */
 export default function HistoryScreen() {
   const { t } = useTranslation();
   const [range, setRange] = useState<MealRange>('today');
   const meals = useMeals(range);
   const { start } = useStartMealLog();
-  const items = meals.data?.pages.flatMap((page) => page.items) ?? [];
+  const pendingId = usePendingDeleteStore((state) => state.pendingId);
+  const items = (meals.data?.pages.flatMap((page) => page.items) ?? []).filter(
+    (meal) => meal.id !== pendingId,
+  );
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top', 'left', 'right']}>
@@ -68,13 +76,18 @@ export default function HistoryScreen() {
         <FlatList
           data={items}
           keyExtractor={(meal) => meal.id}
-          renderItem={({ item }) => <MealCard meal={item} />}
+          renderItem={({ item }) => (
+            <MealCard meal={item} onPress={() => router.push(`/meals/${item.id}`)} />
+          )}
           contentContainerClassName="grow gap-md px-lg py-lg"
           refreshing={meals.isRefetching}
           onRefresh={() => void meals.refetch()}
           ListEmptyComponent={
             <View testID="history-empty" className="items-center gap-md py-xl">
               <Icon name="restaurant-outline" size={40} color={colors.textSecondary} />
+              <Text variant="subtitle" className="text-center">
+                {t('history.emptyTitle')}
+              </Text>
               <Text variant="secondary" className="text-center">
                 {t('history.empty')}
               </Text>
@@ -93,6 +106,7 @@ export default function HistoryScreen() {
           }
         />
       )}
+      <UndoSnackbar />
     </SafeAreaView>
   );
 }

@@ -25,8 +25,17 @@ export const registerSchema = z.object({
   adult: z.boolean().refine((value) => value, 'auth.register.adultRequired'),
 });
 
+export const resetSchema = z.object({
+  password: z
+    .string()
+    .min(PASSWORD_MIN, 'auth.register.weakPassword')
+    .regex(/[A-Za-z]/, 'auth.register.weakPassword')
+    .regex(/\d/, 'auth.register.weakPassword'),
+});
+
 export const recoverSchema = z.object({ email });
 
 export type SignInValues = z.infer<typeof signInSchema>;
 export type RegisterValues = z.infer<typeof registerSchema>;
+export type ResetValues = z.infer<typeof resetSchema>;
 export type RecoverValues = z.infer<typeof recoverSchema>;

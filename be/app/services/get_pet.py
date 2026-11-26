@@ -18,7 +18,7 @@ from app.domain import (
 )
 from app.ports.repositories import PetRecord, UnitOfWork, UserRecord
 from app.services.analytics import life_change_events, track_all
-from app.services.common import build_pet_view, parse_timezone, require_user, settled_state
+from app.services.common import build_pet_view, parse_timezone, require_adult_user, settled_state
 from app.services.context import ServiceContext
 from app.services.errors import NotEnoughPoints, PetNotFound, ValidationFailed
 from app.services.views import PetView
@@ -54,7 +54,7 @@ async def settle_and_save(
 
 async def get_pet(ctx: ServiceContext, user_id: UUID) -> PetView:
     async with ctx.uow_factory() as uow:
-        user = await require_user(uow, user_id)
+        user = await require_adult_user(uow, user_id)
         pet = await load_pet(uow, user_id)
         _, view = await settle_and_save(ctx, uow, user, pet)
         await uow.commit()
@@ -72,7 +72,7 @@ async def update_pet(
     if color is not None and not _COLOR.match(color):
         raise ValidationFailed("Pet color is not valid.")
     async with ctx.uow_factory() as uow:
-        user = await require_user(uow, user_id)
+        user = await require_adult_user(uow, user_id)
         pet = await load_pet(uow, user_id)
         was_unnamed = pet.name is None
         last_seen = pet.last_seen_lives

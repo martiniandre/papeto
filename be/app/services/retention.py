@@ -45,6 +45,7 @@ async def purge_deleted_accounts(ctx: ServiceContext) -> PurgeReport:
             email=f"deleted-{user.id}@deleted.invalid",
             name="",
             password_hash=None,
+            google_subject=None,
             timezone="UTC",
             analytics_opt_out=True,
             notifications=DEFAULT_PREFS,

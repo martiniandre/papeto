@@ -11,7 +11,12 @@ from uuid import UUID
 
 from app.ports import MealType
 from app.ports.repositories import MealCursor, MealRecord
-from app.services.common import parse_timezone, require_meal_consent, require_user
+from app.services.common import (
+    parse_timezone,
+    require_adult_user,
+    require_meal_consent,
+    require_user,
+)
 from app.services.context import ServiceContext
 from app.services.errors import InvalidCursor, MealNotFound, ValidationFailed
 from app.services.views import MealPage
@@ -59,7 +64,7 @@ async def list_meals(
     limit = max(1, min(limit, MAX_PAGE_SIZE))
     decoded = decode_cursor(cursor) if cursor else None
     async with ctx.uow_factory() as uow:
-        user = await require_user(uow, user_id)
+        user = await require_adult_user(uow, user_id)
         await require_meal_consent(uow, user_id)
         today = ctx.clock.today(parse_timezone(user.timezone))
         since = today - timedelta(days=_RANGE_DAYS[meal_range])
@@ -71,7 +76,7 @@ async def list_meals(
 
 async def get_meal(ctx: ServiceContext, user_id: UUID, meal_id: UUID) -> MealRecord:
     async with ctx.uow_factory() as uow:
-        await require_user(uow, user_id)
+        await require_adult_user(uow, user_id)
         await require_meal_consent(uow, user_id)
         meal = await uow.meals.get(user_id, meal_id)
     if meal is None:
@@ -98,7 +103,7 @@ async def update_meal(
 ) -> MealRecord:
     cleaned = clean_items(items) if items is not None else None
     async with ctx.uow_factory() as uow:
-        await require_user(uow, user_id)
+        await require_adult_user(uow, user_id)
         await require_meal_consent(uow, user_id)
         meal = await uow.meals.get(user_id, meal_id)
         if meal is None:
@@ -115,7 +120,7 @@ async def update_meal(
 async def delete_meal(ctx: ServiceContext, user_id: UUID, meal_id: UUID) -> None:
     """Soft delete. Points, daily usage and lives are intentionally left as they were."""
     async with ctx.uow_factory() as uow:
-        await require_user(uow, user_id)
+        await require_adult_user(uow, user_id)
         await require_meal_consent(uow, user_id)
         meal = await uow.meals.get(user_id, meal_id)
         if meal is None:

@@ -14,7 +14,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from app.services.errors import ServiceError
+from app.services.errors import AdultConfirmationPending, ServiceError
 
 log = structlog.get_logger()
 
@@ -26,6 +26,9 @@ class ErrorCode(StrEnum):
     EMAIL_ALREADY_REGISTERED = "EMAIL_ALREADY_REGISTERED"
     ADULT_CONFIRMATION_REQUIRED = "ADULT_CONFIRMATION_REQUIRED"
     INVALID_TIMEZONE = "INVALID_TIMEZONE"
+    GOOGLE_TOKEN_INVALID = "GOOGLE_TOKEN_INVALID"
+    GOOGLE_EMAIL_NOT_VERIFIED = "GOOGLE_EMAIL_NOT_VERIFIED"
+    AUTH_PROVIDER_UNAVAILABLE = "AUTH_PROVIDER_UNAVAILABLE"
     VALIDATION_ERROR = "VALIDATION_ERROR"
     MEAL_CONSENT_REQUIRED = "MEAL_CONSENT_REQUIRED"
     DAILY_LIMIT_REACHED = "DAILY_LIMIT_REACHED"
@@ -53,6 +56,9 @@ STATUS_BY_CODE: dict[str, int] = {
     ErrorCode.EMAIL_ALREADY_REGISTERED: 409,
     ErrorCode.ADULT_CONFIRMATION_REQUIRED: 422,
     ErrorCode.INVALID_TIMEZONE: 422,
+    ErrorCode.GOOGLE_TOKEN_INVALID: 401,
+    ErrorCode.GOOGLE_EMAIL_NOT_VERIFIED: 401,
+    ErrorCode.AUTH_PROVIDER_UNAVAILABLE: 503,
     ErrorCode.VALIDATION_ERROR: 422,
     ErrorCode.MEAL_CONSENT_REQUIRED: 403,
     ErrorCode.DAILY_LIMIT_REACHED: 429,
@@ -72,6 +78,11 @@ STATUS_BY_CODE: dict[str, int] = {
     ErrorCode.METHOD_NOT_ALLOWED: 405,
     ErrorCode.INTERNAL_ERROR: 500,
 }
+
+
+# The same code can mean a different status depending on where it is raised: a register body without
+# the 18+ checkbox is 422, while an account that still has to confirm it is 403 on pet and meals.
+STATUS_BY_ERROR: dict[type[ServiceError], int] = {AdultConfirmationPending: 403}
 
 
 class ApiError(Exception):
@@ -98,7 +109,7 @@ async def _service_error(_: Request, exc: Exception) -> JSONResponse:
     if exc.code not in STATUS_BY_CODE:
         log.error("unmapped_error_code", code=exc.code)
         return error_response(ErrorCode.INTERNAL_ERROR, "Something went wrong.")
-    return error_response(exc.code, exc.message)
+    return error_response(exc.code, exc.message, STATUS_BY_ERROR.get(type(exc)))
 
 
 async def _api_error(_: Request, exc: Exception) -> JSONResponse:

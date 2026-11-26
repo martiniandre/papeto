@@ -8,7 +8,7 @@ from uuid import UUID
 
 from app.domain import Plan, is_paused
 from app.ports.repositories import PauseRecord
-from app.services.common import current_plan, require_user
+from app.services.common import current_plan, require_adult_user
 from app.services.context import ServiceContext
 from app.services.errors import PetAlreadyPaused, PetNotPaused, PremiumRequired, ValidationFailed
 from app.services.get_pet import load_pet, settle_and_save
@@ -22,7 +22,7 @@ async def pause_pet(ctx: ServiceContext, user_id: UUID, *, days: int) -> PetView
         raise ValidationFailed("Pause must be 1, 3 or 7 days.")
     now = ctx.clock.now()
     async with ctx.uow_factory() as uow:
-        user = await require_user(uow, user_id)
+        user = await require_adult_user(uow, user_id)
         if await current_plan(uow, user_id, now) is not Plan.PREMIUM:
             raise PremiumRequired
         pet = await load_pet(uow, user_id)
@@ -44,7 +44,7 @@ async def pause_pet(ctx: ServiceContext, user_id: UUID, *, days: int) -> PetView
 async def resume_pet(ctx: ServiceContext, user_id: UUID) -> PetView:
     now = ctx.clock.now()
     async with ctx.uow_factory() as uow:
-        user = await require_user(uow, user_id)
+        user = await require_adult_user(uow, user_id)
         pet = await load_pet(uow, user_id)
         if not is_paused(pet.state, now):
             raise PetNotPaused

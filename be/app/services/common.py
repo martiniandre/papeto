@@ -23,7 +23,12 @@ from app.domain import (
     unspent_attribute_points,
 )
 from app.ports.repositories import ConsentType, PetRecord, UnitOfWork, UserRecord
-from app.services.errors import InvalidTimezone, InvalidToken, MealConsentRequired
+from app.services.errors import (
+    AdultConfirmationPending,
+    InvalidTimezone,
+    InvalidToken,
+    MealConsentRequired,
+)
 from app.services.views import PetView
 
 _ACTIVE_STATUSES = frozenset({"active", "trialing"})
@@ -40,6 +45,15 @@ async def require_user(uow: UnitOfWork, user_id: UUID) -> UserRecord:
     user = await uow.users.get(user_id)
     if user is None:
         raise InvalidToken
+    return user
+
+
+async def require_adult_user(uow: UnitOfWork, user_id: UUID) -> UserRecord:
+    """The user, only after the 18+ confirmation. Pet and meal use cases go through here; export,
+    account deletion, consents and erasing meals do not."""
+    user = await require_user(uow, user_id)
+    if user.adult_confirmed_at is None:
+        raise AdultConfirmationPending
     return user
 
 

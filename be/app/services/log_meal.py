@@ -41,8 +41,8 @@ from app.services.common import (
     current_plan,
     parse_timezone,
     pause_windows,
+    require_adult_user,
     require_meal_consent,
-    require_user,
 )
 from app.services.context import ServiceContext
 from app.services.errors import (
@@ -119,7 +119,7 @@ async def log_meal(
 ) -> LogMealResult:
     # 1. Cheap checks first, in a short transaction without row locks.
     async with ctx.uow_factory() as uow:
-        user = await require_user(uow, user_id)
+        user = await require_adult_user(uow, user_id)
         await require_meal_consent(uow, user_id)
         zone = parse_timezone(user.timezone)
         plan = await current_plan(uow, user_id, ctx.clock.now())
@@ -182,7 +182,7 @@ async def log_manual_meal(
     if not cleaned:
         raise ValidationFailed("Choose at least one item.")
     async with ctx.uow_factory() as uow:
-        user = await require_user(uow, user_id)
+        user = await require_adult_user(uow, user_id)
         await require_meal_consent(uow, user_id)
         zone = parse_timezone(user.timezone)
         now = ctx.clock.now()

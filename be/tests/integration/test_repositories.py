@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from dataclasses import replace
 from datetime import UTC, date, datetime
 from uuid import uuid4
 
@@ -16,6 +17,7 @@ from alembic import command
 from app.db.session import SqlUowFactory
 from app.domain import PointsReason, new_pet
 from app.ports.repositories import (
+    AuthMethod,
     DuplicateEmailError,
     MealRecord,
     PaymentEventRecord,
@@ -67,6 +69,42 @@ async def test_duplicate_email_is_reported(uow_factory: SqlUowFactory) -> None:
     async with uow_factory() as uow:
         with pytest.raises(DuplicateEmailError):
             await uow.users.add(_user())
+
+
+async def test_google_subject_roundtrip_and_uniqueness(uow_factory: SqlUowFactory) -> None:
+    google = replace(
+        _user("g@example.com"),
+        password_hash=None,
+        adult_confirmed_at=None,
+        auth_provider=AuthMethod.GOOGLE,
+        google_subject="sub-1",
+    )
+    await _add_user(uow_factory, google)
+    async with uow_factory() as uow:
+        found = await uow.users.get_by_google_subject("sub-1")
+        assert found == google
+        assert await uow.users.get_by_google_subject("sub-2") is None
+    async with uow_factory() as uow:
+        with pytest.raises(DuplicateEmailError):
+            await uow.users.add(replace(_user("other@example.com"), google_subject="sub-1"))
+
+
+async def test_linking_and_confirming_are_saved(uow_factory: SqlUowFactory) -> None:
+    user = replace(_user(), adult_confirmed_at=None)
+    taken = replace(_user("b@example.com"), google_subject="taken")
+    await _add_user(uow_factory, user)
+    await _add_user(uow_factory, taken)
+    async with uow_factory() as uow:
+        await uow.users.save(replace(user, google_subject="sub-9", adult_confirmed_at=NOW))
+        await uow.commit()
+    async with uow_factory() as uow:
+        saved = await uow.users.get(user.id)
+        assert saved is not None
+        assert (saved.google_subject, saved.adult_confirmed_at) == ("sub-9", NOW)
+        assert saved.auth_provider is AuthMethod.EMAIL
+    async with uow_factory() as uow:
+        with pytest.raises(DuplicateEmailError):
+            await uow.users.save(replace(user, google_subject="taken"))
 
 
 async def test_payment_event_is_idempotent_by_external_event_id(uow_factory: SqlUowFactory) -> None:
@@ -173,3 +211,18 @@ async def test_migration_downgrade_and_upgrade_again(
         ).scalars()
         assert set(tables) <= {"alembic_version"}
     await asyncio.to_thread(command.upgrade, config, "head")
+
+
+async def test_migration_downgrade_refuses_to_invent_adult_confirmation(
+    engine: AsyncEngine, uow_factory: SqlUowFactory, database_url: str
+) -> None:
+    await _add_user(uow_factory, replace(_user(), adult_confirmed_at=None))
+    config = Config(str(BE_DIR / "alembic.ini"))
+    config.set_main_option("script_location", str(BE_DIR / "alembic"))
+    with pytest.raises(RuntimeError, match="adult confirmation"):
+        await asyncio.to_thread(command.downgrade, config, "0009_pet_attributes")
+    async with engine.connect() as connection:
+        version = (
+            await connection.execute(text("SELECT version_num FROM alembic_version"))
+        ).scalar_one()
+    assert version == "0010_google_sign_in"

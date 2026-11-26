@@ -6,6 +6,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
+from app.services.auth import GoogleSignIn
 from app.services.views import TokenPair
 
 
@@ -24,6 +25,13 @@ class LoginRequest(BaseModel):
 
     email: EmailStr
     password: str = Field(min_length=1, max_length=128)
+
+
+class GoogleSignInRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id_token: str = Field(min_length=1, max_length=8192)
+    timezone: str | None = Field(default=None, max_length=64)  # used only for a new account
 
 
 class RefreshRequest(BaseModel):
@@ -63,4 +71,20 @@ class TokenResponse(BaseModel):
             access_token=pair.access_token,
             refresh_token=pair.refresh_token,
             expires_in=pair.expires_in,
+        )
+
+
+class GoogleSignInResponse(TokenResponse):
+    """The same token body as `/auth/login`, plus whether this sign-in created the account."""
+
+    is_new_user: bool
+
+    @classmethod
+    def from_result(cls, result: GoogleSignIn) -> GoogleSignInResponse:
+        pair = result.tokens
+        return cls(
+            access_token=pair.access_token,
+            refresh_token=pair.refresh_token,
+            expires_in=pair.expires_in,
+            is_new_user=result.is_new_user,
         )

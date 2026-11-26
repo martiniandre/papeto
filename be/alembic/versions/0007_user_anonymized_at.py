@@ -1,7 +1,7 @@
 """Mark accounts whose personal data was erased after the 30-day deletion grace period.
 
-Revision ID: 0004_user_anonymized_at
-Revises: 0003_notice_log
+Revision ID: 0007_user_anonymized_at
+Revises: 0006_notice_log
 Create Date: 2026-11-26
 """
 
@@ -11,8 +11,8 @@ import sqlalchemy as sa
 
 from alembic import op
 
-revision: str = "0004_user_anonymized_at"
-down_revision: str | None = "0003_notice_log"
+revision: str = "0007_user_anonymized_at"
+down_revision: str | None = "0006_notice_log"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

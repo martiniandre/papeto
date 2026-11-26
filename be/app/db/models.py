@@ -81,7 +81,7 @@ class PetModel(Base):
     user_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), unique=True
     )
-    name: Mapped[str] = mapped_column(String(20))
+    name: Mapped[str | None] = mapped_column(String(20))  # None until the user names it
     color: Mapped[str] = mapped_column(String(20))
     lives: Mapped[int] = mapped_column(Integer)
     streak_days: Mapped[int] = mapped_column(Integer)
@@ -121,6 +121,7 @@ class MealLogModel(Base):
     confidence: Mapped[float] = mapped_column(Float)
     plate_share: Mapped[dict[str, float]] = mapped_column(JSON)
     new_foods: Mapped[list[str]] = mapped_column(JSON)
+    source: Mapped[str] = mapped_column(String(16), default="photo")  # photo | manual
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
@@ -139,6 +140,20 @@ class PointsEventModel(Base):
     amount: Mapped[int] = mapped_column(Integer)
     local_day: Mapped[date] = mapped_column(Date)
     created_at: Mapped[datetime] = _ts()
+
+
+class PasswordResetModel(Base):
+    """Single-use password reset tokens. Only the SHA-256 hash of the token is stored."""
+
+    __tablename__ = "password_resets"
+    __table_args__ = (Index("ix_password_resets_user_created", "user_id", "created_at"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    created_at: Mapped[datetime] = _ts()
+    expires_at: Mapped[datetime] = _ts()
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class PushTokenModel(Base):
@@ -169,7 +184,12 @@ class NoticeLogModel(Base):
 
 
 class DailyUsageModel(Base):
-    """Successful photo analyses per user and local day (failed analyses are never counted)."""
+    """Logs per user and local day.
+
+    `analyses` counts successful photo analyses (the AI limit; failed ones are never counted).
+    `manual_logs` counts meals entered by hand (RF-95): they make the day a logged day but never
+    consume the AI limit.
+    """
 
     __tablename__ = "daily_usage"
 
@@ -178,6 +198,7 @@ class DailyUsageModel(Base):
     )
     local_day: Mapped[date] = mapped_column(Date, primary_key=True)
     analyses: Mapped[int] = mapped_column(Integer, default=0)
+    manual_logs: Mapped[int] = mapped_column(Integer, default=0)
 
 
 class SubscriptionModel(Base):

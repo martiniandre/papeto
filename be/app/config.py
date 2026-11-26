@@ -36,6 +36,7 @@ class Settings(BaseSettings):
     vision_provider: str = "fake"
     payment_provider: str = "fake"
     push_provider: str = "fake"  # "fake" or "expo"
+    email_provider: str = "fake"
     vision_api_key: SecretStr | None = None
     stripe_secret_key: SecretStr | None = None
     stripe_webhook_secret: SecretStr | None = None
@@ -46,3 +47,9 @@ class Settings(BaseSettings):
     max_upload_bytes: int = 8 * 1024 * 1024
     deletion_grace_days: int = 30
     default_timezone: str = "America/Sao_Paulo"
+
+    # Password reset: the e-mailed link is `<password_reset_url>?token=...` (app deep link or web
+    # page; not decided yet). Requests above the hourly cap per account are dropped silently.
+    password_reset_url: str = "papeto://reset-password"
+    password_reset_minutes: int = 60
+    password_reset_max_per_hour: int = 3

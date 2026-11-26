@@ -1,7 +1,7 @@
 """Notice log: what push notices were sent, so none is sent twice.
 
-Revision ID: 0003_notice_log
-Revises: 0002_notification_prefs
+Revision ID: 0006_notice_log
+Revises: 0005_notification_prefs
 Create Date: 2026-11-26
 """
 
@@ -11,8 +11,8 @@ import sqlalchemy as sa
 
 from alembic import op
 
-revision: str = "0003_notice_log"
-down_revision: str | None = "0002_notification_prefs"
+revision: str = "0006_notice_log"
+down_revision: str | None = "0005_notification_prefs"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

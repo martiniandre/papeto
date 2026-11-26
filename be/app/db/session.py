@@ -16,6 +16,7 @@ from app.db.repositories import (
     SqlConsentRepository,
     SqlMealRepository,
     SqlNoticeRepository,
+    SqlPasswordResetRepository,
     SqlPauseRepository,
     SqlPaymentEventRepository,
     SqlPetRepository,
@@ -49,6 +50,7 @@ class SqlUnitOfWork:
         self.meals = SqlMealRepository(session)
         self.points = SqlPointsRepository(session)
         self.usage = SqlUsageRepository(session)
+        self.password_resets = SqlPasswordResetRepository(session)
         self.push_tokens = SqlPushTokenRepository(session)
         self.retention = SqlRetentionRepository(session)
         self.notices = SqlNoticeRepository(session)

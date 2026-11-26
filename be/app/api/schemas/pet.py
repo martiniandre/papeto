@@ -11,7 +11,7 @@ from app.services.views import PetView
 
 
 class PetBase(BaseModel):
-    name: str
+    name: str | None  # null until the user names the pet
     color: str
     lives: int
     max_lives: int

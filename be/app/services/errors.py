@@ -92,6 +92,11 @@ class PetNotFound(ServiceError):
     message = "Pet not found."
 
 
+class InvalidResetToken(ServiceError):
+    code = "INVALID_RESET_TOKEN"
+    message = "The password reset link is invalid or expired."
+
+
 class InvalidCursor(ServiceError):
     code = "INVALID_CURSOR"
     message = "The pagination cursor is not valid."

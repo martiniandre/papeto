@@ -9,9 +9,15 @@ from fastapi import APIRouter, Depends, Query, Response, UploadFile
 
 from app.api.deps import Ctx, UserId, get_max_upload_bytes
 from app.api.errors import ApiError, ErrorCode
-from app.api.schemas.meals import LogMealResponse, MealListResponse, MealOut, MealPatch
+from app.api.schemas.meals import (
+    LogMealResponse,
+    ManualMealRequest,
+    MealListResponse,
+    MealOut,
+    MealPatch,
+)
 from app.services import meals as meal_service
-from app.services.log_meal import log_meal
+from app.services.log_meal import log_manual_meal, log_meal
 from app.services.meals import MealRange
 
 router = APIRouter(prefix="/meals", tags=["meals"])
@@ -42,6 +48,13 @@ async def create_meal(
 ) -> LogMealResponse:
     image = await _read_photo(photo, max_bytes)
     return LogMealResponse.from_result(await log_meal(ctx, user_id, image))
+
+
+@router.post("/manual", status_code=201)
+async def create_manual_meal(body: ManualMealRequest, ctx: Ctx, user_id: UserId) -> LogMealResponse:
+    """RF-95: log a meal by hand when the photo could not be read. No AI, no photo limit."""
+    result = await log_manual_meal(ctx, user_id, items=body.items, meal_type=body.meal_type)
+    return LogMealResponse.from_result(result)
 
 
 @router.get("")

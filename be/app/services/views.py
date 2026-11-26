@@ -11,7 +11,7 @@ from app.ports.repositories import ConsentRecord, ConsentType, MealRecord, UserR
 
 @dataclass(frozen=True, slots=True)
 class PetView:
-    name: str
+    name: str | None
     color: str
     lives: int
     max_lives: int

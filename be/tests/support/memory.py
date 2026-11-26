@@ -17,6 +17,7 @@ from app.ports.repositories import (
     MealCursor,
     MealRecord,
     NoticeRecord,
+    PasswordResetRecord,
     PauseRecord,
     PaymentEventRecord,
     PetRecord,
@@ -36,6 +37,8 @@ class MemoryStore:
     meals: dict[UUID, MealRecord] = field(default_factory=dict)
     points: list[PointsEventRecord] = field(default_factory=list)
     usage: dict[tuple[UUID, date], int] = field(default_factory=dict)
+    manual_logs: dict[tuple[UUID, date], int] = field(default_factory=dict)
+    password_resets: dict[str, PasswordResetRecord] = field(default_factory=dict)  # by hash
     push_tokens: dict[str, PushTokenRecord] = field(default_factory=dict)
     notices: list[NoticeRecord] = field(default_factory=list)
     subscriptions: dict[UUID, SubscriptionRecord] = field(default_factory=dict)
@@ -195,8 +198,35 @@ class MemUsage:
     async def increment(self, user_id: UUID, day: date) -> None:
         self.s.usage[(user_id, day)] = self.s.usage.get((user_id, day), 0) + 1
 
+    async def increment_manual(self, user_id: UUID, day: date) -> None:
+        self.s.manual_logs[(user_id, day)] = self.s.manual_logs.get((user_id, day), 0) + 1
+
     async def logged_days(self, user_id: UUID) -> set[date]:
-        return {day for (uid, day), n in self.s.usage.items() if uid == user_id and n > 0}
+        counts = (*self.s.usage.items(), *self.s.manual_logs.items())
+        return {day for (uid, day), n in counts if uid == user_id and n > 0}
+
+
+class MemPasswordResets:
+    def __init__(self, s: MemoryStore) -> None:
+        self.s = s
+
+    async def add(self, reset: PasswordResetRecord) -> None:
+        self.s.password_resets[reset.token_hash] = reset
+
+    async def get_by_hash(self, token_hash: str) -> PasswordResetRecord | None:
+        return self.s.password_resets.get(token_hash)
+
+    async def count_since(self, user_id: UUID, since: datetime) -> int:
+        return sum(
+            1
+            for r in self.s.password_resets.values()
+            if r.user_id == user_id and r.created_at >= since
+        )
+
+    async def use_all(self, user_id: UUID, now: datetime) -> None:
+        for key, r in list(self.s.password_resets.items()):
+            if r.user_id == user_id and r.used_at is None:
+                self.s.password_resets[key] = replace(r, used_at=now)
 
 
 class MemPushTokens:
@@ -310,6 +340,7 @@ class MemoryUnitOfWork:
         self.meals = MemMeals(store)
         self.points = MemPoints(store)
         self.usage = MemUsage(store)
+        self.password_resets = MemPasswordResets(store)
         self.push_tokens = MemPushTokens(store)
         self.retention = MemRetention(store)
         self.notices = MemNotices(store)

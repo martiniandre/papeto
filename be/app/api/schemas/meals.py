@@ -10,7 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from app.api.schemas.pet import PetSummary
 from app.domain import PetEvent
 from app.ports import MealType
-from app.ports.repositories import MealRecord
+from app.ports.repositories import MealRecord, MealSource
 from app.services.views import LogMealResult, MealPage
 
 
@@ -27,6 +27,7 @@ class MealOut(BaseModel):
     confidence: float
     plate_share: dict[str, float]
     new_foods: list[str]
+    source: MealSource
 
     @classmethod
     def from_record(cls, meal: MealRecord) -> MealOut:
@@ -43,6 +44,7 @@ class MealOut(BaseModel):
             confidence=meal.confidence,
             plate_share=meal.plate_share,
             new_foods=meal.new_foods,
+            source=meal.source,
         )
 
 
@@ -74,3 +76,12 @@ class MealPatch(BaseModel):
 
     items: list[str] | None = Field(default=None, max_length=30)
     meal_type: MealType | None = None
+
+
+class ManualMealRequest(BaseModel):
+    """RF-95: a meal registered by choosing items by hand (no photo, no AI)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    items: list[str] = Field(min_length=1, max_length=30)
+    meal_type: MealType

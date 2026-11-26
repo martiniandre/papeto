@@ -22,6 +22,11 @@ class ConsentType(StrEnum):
     ANALYTICS = "analytics"
 
 
+class MealSource(StrEnum):
+    PHOTO = "photo"  # described by the vision provider
+    MANUAL = "manual"  # items chosen by hand when the photo could not be read (RF-95)
+
+
 class DuplicateEmailError(Exception):
     """Raised by `UserRepository.add` when the email is already registered."""
 
@@ -55,7 +60,7 @@ class ConsentRecord:
 class PetRecord:
     id: UUID
     user_id: UUID
-    name: str
+    name: str | None  # None until the user names the pet (screen 43)
     color: str
     state: PetState
     last_seen_lives: int | None
@@ -86,6 +91,7 @@ class MealRecord:
     plate_share: dict[str, float]
     new_foods: list[str]
     deleted_at: datetime | None = None
+    source: MealSource = MealSource.PHOTO
 
 
 @dataclass(frozen=True, slots=True)
@@ -102,6 +108,18 @@ class PointsEventRecord:
     amount: int
     local_day: date
     created_at: datetime
+
+
+@dataclass(frozen=True, slots=True)
+class PasswordResetRecord:
+    """A single-use reset token. Only its SHA-256 hash is stored, never the token itself."""
+
+    id: UUID
+    user_id: UUID
+    token_hash: str
+    created_at: datetime
+    expires_at: datetime
+    used_at: datetime | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -220,11 +238,32 @@ class PointsRepository(Protocol):
 
 class UsageRepository(Protocol):
     async def count(self, user_id: UUID, day: date) -> int:
-        """Successful analyses on a local day."""
+        """Successful photo analyses on a local day (the AI limit). Manual logs never count."""
         ...
 
-    async def increment(self, user_id: UUID, day: date) -> None: ...
-    async def logged_days(self, user_id: UUID) -> set[date]: ...
+    async def increment(self, user_id: UUID, day: date) -> None:
+        """Record one successful photo analysis."""
+        ...
+
+    async def increment_manual(self, user_id: UUID, day: date) -> None:
+        """Record one manual log: a logged day that does not consume the AI limit."""
+        ...
+
+    async def logged_days(self, user_id: UUID) -> set[date]:
+        """Days with at least one photo analysis or manual log."""
+        ...
+
+
+class PasswordResetRepository(Protocol):
+    async def add(self, reset: PasswordResetRecord) -> None: ...
+    async def get_by_hash(self, token_hash: str) -> PasswordResetRecord | None: ...
+    async def count_since(self, user_id: UUID, since: datetime) -> int:
+        """Tokens created for the user at or after `since` (used ones included)."""
+        ...
+
+    async def use_all(self, user_id: UUID, now: datetime) -> None:
+        """Set `used_at = now` on every unused token of the user."""
+        ...
 
 
 class PushTokenRepository(Protocol):
@@ -295,6 +334,8 @@ class UnitOfWork(Protocol):
     def points(self) -> PointsRepository: ...
     @property
     def usage(self) -> UsageRepository: ...
+    @property
+    def password_resets(self) -> PasswordResetRepository: ...
     @property
     def push_tokens(self) -> PushTokenRepository: ...
     @property

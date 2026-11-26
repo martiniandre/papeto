@@ -18,7 +18,9 @@ from app.ports.repositories import (
     DuplicateEmailError,
     MealCursor,
     MealRecord,
+    MealSource,
     NoticeRecord,
+    PasswordResetRecord,
     PauseRecord,
     PaymentEventRecord,
     PetRecord,
@@ -267,6 +269,7 @@ def _meal(row: m.MealLogModel) -> MealRecord:
         plate_share=dict(row.plate_share),
         new_foods=list(row.new_foods),
         deleted_at=row.deleted_at,
+        source=MealSource(row.source),
     )
 
 
@@ -283,6 +286,7 @@ def _apply_meal(row: m.MealLogModel, meal: MealRecord) -> None:
     row.plate_share = dict(meal.plate_share)
     row.new_foods = list(meal.new_foods)
     row.deleted_at = meal.deleted_at
+    row.source = meal.source.value
 
 
 class SqlMealRepository:
@@ -425,20 +429,89 @@ class SqlUsageRepository:
         return int(value or 0)
 
     async def increment(self, user_id: UUID, day: date) -> None:
-        stmt = pg_insert(m.DailyUsageModel).values(user_id=user_id, local_day=day, analyses=1)
+        stmt = pg_insert(m.DailyUsageModel).values(
+            user_id=user_id, local_day=day, analyses=1, manual_logs=0
+        )
         stmt = stmt.on_conflict_do_update(
             index_elements=["user_id", "local_day"],
             set_={"analyses": m.DailyUsageModel.analyses + 1},
         )
         await self._s.execute(stmt)
 
+    async def increment_manual(self, user_id: UUID, day: date) -> None:
+        stmt = pg_insert(m.DailyUsageModel).values(
+            user_id=user_id, local_day=day, analyses=0, manual_logs=1
+        )
+        stmt = stmt.on_conflict_do_update(
+            index_elements=["user_id", "local_day"],
+            set_={"manual_logs": m.DailyUsageModel.manual_logs + 1},
+        )
+        await self._s.execute(stmt)
+
     async def logged_days(self, user_id: UUID) -> set[date]:
         rows = await self._s.execute(
             select(m.DailyUsageModel.local_day).where(
-                m.DailyUsageModel.user_id == user_id, m.DailyUsageModel.analyses > 0
+                m.DailyUsageModel.user_id == user_id,
+                or_(m.DailyUsageModel.analyses > 0, m.DailyUsageModel.manual_logs > 0),
             )
         )
         return set(rows.scalars())
+
+
+def _reset(row: m.PasswordResetModel) -> PasswordResetRecord:
+    return PasswordResetRecord(
+        id=row.id,
+        user_id=row.user_id,
+        token_hash=row.token_hash,
+        created_at=row.created_at,
+        expires_at=row.expires_at,
+        used_at=row.used_at,
+    )
+
+
+class SqlPasswordResetRepository:
+    def __init__(self, session: AsyncSession) -> None:
+        self._s = session
+
+    async def add(self, reset: PasswordResetRecord) -> None:
+        self._s.add(
+            m.PasswordResetModel(
+                id=reset.id,
+                user_id=reset.user_id,
+                token_hash=reset.token_hash,
+                created_at=reset.created_at,
+                expires_at=reset.expires_at,
+                used_at=reset.used_at,
+            )
+        )
+        await self._s.flush()
+
+    async def get_by_hash(self, token_hash: str) -> PasswordResetRecord | None:
+        row = await self._s.scalar(
+            select(m.PasswordResetModel).where(m.PasswordResetModel.token_hash == token_hash)
+        )
+        return _reset(row) if row else None
+
+    async def count_since(self, user_id: UUID, since: datetime) -> int:
+        value = await self._s.scalar(
+            select(func.count())
+            .select_from(m.PasswordResetModel)
+            .where(
+                m.PasswordResetModel.user_id == user_id,
+                m.PasswordResetModel.created_at >= since,
+            )
+        )
+        return int(value or 0)
+
+    async def use_all(self, user_id: UUID, now: datetime) -> None:
+        await self._s.execute(
+            update(m.PasswordResetModel)
+            .where(
+                m.PasswordResetModel.user_id == user_id,
+                m.PasswordResetModel.used_at.is_(None),
+            )
+            .values(used_at=now)
+        )
 
 
 class SqlPushTokenRepository:

@@ -10,7 +10,7 @@ Values marked *(tunable)* are starting values to test with users. Keep them in o
 
 | Term | Meaning |
 | --- | --- |
-| log | A meal registered successfully (AI analysis succeeded and was saved). Failed analyses are not logs. |
+| log | A meal registered successfully: an AI analysis that succeeded and was saved, or a meal entered by hand when the photo could not be read (RF-95). Failed analyses are not logs. |
 | local day | Calendar day in the user's IANA timezone (`user.timezone`). Day boundaries are local midnight. |
 | missed day | A local day that ended with zero logs while the pet was not paused. |
 | pause | Premium feature. `pet.rest_until` in the future means the pet is paused. |
@@ -88,6 +88,7 @@ Fainting or losing lives never removes points, skins or history.
 | Premium | *(not decided yet — ask before implementing)* |
 
 A failed analysis (unreadable photo, provider error, not food) does not consume the limit.
+A manual entry (RF-95) never consumes the limit; it follows the same lives, streak and points rules as a photo log.
 
 ## Required tests (minimum)
 

@@ -1,4 +1,5 @@
-"""Migration checks that need no server: run 0001 on SQLite, compare with the models, downgrade.
+"""Migration checks that need no server: run every revision on SQLite in order, compare the result
+with the models, then downgrade all the way.
 
 SQLite is only a structural stand-in here. The real run against Postgres is in tests/integration.
 """
@@ -7,6 +8,7 @@ from __future__ import annotations
 
 import importlib.util
 from pathlib import Path
+from types import ModuleType
 
 from alembic.migration import MigrationContext
 from alembic.operations import Operations
@@ -17,7 +19,7 @@ from app.db.models import Base
 VERSIONS = Path(__file__).parents[2] / "alembic" / "versions"
 
 
-def _load(path: Path) -> object:
+def _load(path: Path) -> ModuleType:
     spec = importlib.util.spec_from_file_location(f"migration_{path.stem}", path)
     assert spec is not None
     assert spec.loader is not None
@@ -26,19 +28,28 @@ def _load(path: Path) -> object:
     return module
 
 
-def _migrations() -> list[object]:
-    """Every migration, oldest first (file names start with the sequence number)."""
-    return [_load(path) for path in sorted(VERSIONS.glob("0*.py"))]
+def _ordered() -> list[ModuleType]:
+    """Revisions from base to head, following `down_revision` links."""
+    modules = [_load(path) for path in sorted(VERSIONS.glob("[0-9]*.py"))]
+    by_down = {m.down_revision: m for m in modules}
+    assert len(by_down) == len(modules), "migration history must be linear"
+    chain: list[ModuleType] = []
+    current = by_down.get(None)
+    while current is not None:
+        chain.append(current)
+        current = by_down.get(current.revision)
+    assert len(chain) == len(modules), "every migration must be reachable from the base"
+    return chain
 
 
 def test_migrations_match_models_and_are_reversible() -> None:
-    migrations = _migrations()
+    chain = _ordered()
     engine = create_engine("sqlite://")
     with engine.begin() as connection:
         context = MigrationContext.configure(connection)
         with Operations.context(context):
-            for migration in migrations:
-                migration.upgrade()  # type: ignore[attr-defined]
+            for migration in chain:
+                migration.upgrade()
             inspector = inspect(connection)
             assert set(inspector.get_table_names()) == set(Base.metadata.tables)
             for name, table in Base.metadata.tables.items():
@@ -51,8 +62,8 @@ def test_migrations_match_models_and_are_reversible() -> None:
                         name,
                         column.name,
                     )
-            for migration in reversed(migrations):
-                migration.downgrade()  # type: ignore[attr-defined]
+            for migration in reversed(chain):
+                migration.downgrade()
             assert inspect(connection).get_table_names() == []
 
 

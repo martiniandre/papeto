@@ -14,6 +14,7 @@ import { Skeleton } from '@/components/Skeleton';
 import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/ui/Icon';
 import { Text } from '@/components/ui/Text';
+import { usePetAlerts } from '@/features/pet/usePetAlerts';
 import { useStartMealLog } from '@/features/meal/useStartMealLog';
 import { colors } from '@/theme/tokens';
 
@@ -22,6 +23,7 @@ export default function HomeScreen() {
   const { t } = useTranslation();
   const pet = usePet();
   const { start, limitReached } = useStartMealLog();
+  usePetAlerts(pet.data);
 
   // GET /pet settles lives; refresh whenever Home comes back into view.
   useFocusEffect(

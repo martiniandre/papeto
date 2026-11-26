@@ -287,6 +287,31 @@
     },
     "consentRequired": "Para analisar fotos, precisamos da sua autorização."
   },
+  "petAlert": {
+    "lifeLost": {
+      "title": "{{name}} perdeu uma vida",
+      "body_one": "Um dia ficou sem registro. Ainda resta {{count}} vida, e uma foto hoje deixa {{name}} animado de novo.",
+      "body_other": "Um dia ficou sem registro. Ainda restam {{count}} vidas, e uma foto hoje deixa {{name}} animado de novo.",
+      "cta": "Registrar uma refeição",
+      "pause": "Vai ficar fora? Pause o pet",
+      "close": "Agora não"
+    },
+    "fainted": {
+      "badge": "Desmaiado",
+      "title": "{{name}} desmaiou, mas está tudo bem",
+      "body": "As vidas acabaram, mas pontos, visuais e histórico continuam aqui. Registre uma refeição e ele acorda com 1 vida.",
+      "cta": "Acordar com uma refeição",
+      "pause": "Pausar por uns dias",
+      "close": "Agora não"
+    },
+    "premiumTag": "Premium"
+  },
+  "premium": {
+    "title": "Papeto Premium",
+    "body": "Com o Premium você poderá pausar o pet por 1, 3 ou 7 dias, sem perder vidas.",
+    "soon": "O Premium chega numa próxima fase. Por enquanto, nada muda para você.",
+    "close": "Voltar"
+  },
   "errors": {
     "NETWORK_ERROR": "Sem conexão. Tentamos de novo quando voltar.",
     "UNKNOWN_ERROR": "Algo deu errado do nosso lado.",

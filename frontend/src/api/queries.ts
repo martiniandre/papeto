@@ -1,6 +1,8 @@
 import { QueryClient, useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { isApiError } from './client';
+import { usePetAlertStore } from '@/stores/petAlerts';
+
 import { api } from './endpoints';
 import type { Meal, MealPatch, MealRange, Pet, PetUpdate } from './types';
 
@@ -27,8 +29,15 @@ export function createQueryClient(): QueryClient {
 
 export const useMe = (enabled = true) => useQuery({ queryKey: queryKeys.me, queryFn: api.getMe, enabled });
 
+/** `life_lost` is returned once by the API, so it is remembered here before the next refetch replaces it. */
+async function fetchPet(): Promise<Pet> {
+  const pet = await api.getPet();
+  if (pet.events.includes('life_lost')) usePetAlertStore.getState().noteLifeLost();
+  return pet;
+}
+
 export const usePet = (enabled = true) =>
-  useQuery({ queryKey: queryKeys.pet, queryFn: api.getPet, enabled });
+  useQuery({ queryKey: queryKeys.pet, queryFn: fetchPet, enabled });
 
 export function useUpdatePet() {
   const client = useQueryClient();

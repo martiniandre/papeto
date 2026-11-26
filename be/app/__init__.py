@@ -1,0 +1,1 @@
+"""Papeto backend application package."""

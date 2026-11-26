@@ -1,0 +1,15 @@
+# Keep the build context small and never send secrets to the Docker daemon.
+.env
+.env.*
+.venv
+**/__pycache__
+**/*.pyc
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.import_linter_cache
+tests
+*.md
+Dockerfile
+docker-compose.yml
+fly.toml

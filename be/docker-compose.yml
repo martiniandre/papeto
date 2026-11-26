@@ -1,0 +1,35 @@
+# Local development services only: Postgres 16 and Redis 7.
+# Run the API on the host:  uv run alembic upgrade head && uv run uvicorn app.main:app --reload
+#
+# The credentials below are throwaway local-dev values (they match the default DATABASE_URL in
+# app/config.py). They are not secrets and must never be used outside your machine.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: papeto
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-papeto}
+      POSTGRES_DB: papeto
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U papeto -d papeto"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  postgres-data:

@@ -24,6 +24,7 @@ const pet = (overrides: Partial<Pet> = {}): Pet => ({
   points: 40,
   mood: 'tired',
   events: [],
+  support_hint: false,
   ...overrides,
 });
 

@@ -230,7 +230,11 @@ export interface paths {
         put?: never;
         /** Create Meal */
         post: operations["create_meal_v1_meals_post"];
-        delete?: never;
+        /**
+         * Remove All Meals
+         * @description Erase every meal record; keeps the account and the pet. Free, no consent needed.
+         */
+        delete: operations["remove_all_meals_v1_meals_delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -340,10 +344,33 @@ export interface components {
             accepted: boolean;
         };
         /**
+         * ConsentResultOut
+         * @description POST /consents. `suggested_actions` is non-empty only when `meal_data` was revoked.
+         */
+        ConsentResultOut: {
+            type: components["schemas"]["ConsentType"];
+            /** Version */
+            version: string;
+            /** Accepted */
+            accepted: boolean;
+            /**
+             * Recorded At
+             * Format: date-time
+             */
+            recorded_at: string;
+            /** Suggested Actions */
+            suggested_actions: ("export" | "delete_meals" | "delete_account")[];
+        };
+        /**
          * ConsentType
          * @enum {string}
          */
         ConsentType: "terms_privacy" | "meal_data" | "analytics";
+        /** DeletedMealsResponse */
+        DeletedMealsResponse: {
+            /** Deleted */
+            deleted: number;
+        };
         /** ExportMeal */
         ExportMeal: {
             /**
@@ -511,6 +538,8 @@ export interface components {
             pet: components["schemas"]["PetSummary"];
             /** Events */
             events: components["schemas"]["PetEvent"][];
+            /** Pet Tip */
+            pet_tip?: string | null;
         };
         /** LoginRequest */
         LoginRequest: {
@@ -705,6 +734,8 @@ export interface components {
             mood: components["schemas"]["Mood"];
             /** Events */
             events: components["schemas"]["PetEvent"][];
+            /** Support Hint */
+            support_hint: boolean;
         };
         /**
          * PetSummary
@@ -1042,7 +1073,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ConsentOut"];
+                    "application/json": components["schemas"]["ConsentResultOut"];
                 };
             };
             /** @description Validation Error */
@@ -1317,6 +1348,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_all_meals_v1_meals_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeletedMealsResponse"];
                 };
             };
         };

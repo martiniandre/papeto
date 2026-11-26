@@ -20,11 +20,10 @@ export const PET_COLORS = ['lilac', 'mint', 'peach', 'sky'] as const;
 export type OfferedPetColor = (typeof PET_COLORS)[number];
 
 /**
- * GET /pet. A new pet has `name: null` until the user names it (screen 43); the generated type covers it.
- * `support_hint` (risk pattern, off by default on the server) is being added by the backend worker and is not in
- * the generated schema yet: drop the intersection once `npm run api:types` includes it.
+ * GET /pet. A new pet has `name: null` until the user names it (screen 43). `support_hint` flags the RF-98
+ * risk pattern (always false while the server threshold is unset); both come from the generated schema.
  */
-export type Pet = Schemas['PetResponse'] & { support_hint?: boolean };
+export type Pet = Schemas['PetResponse'];
 /** Pet summary returned inside a logged meal (no events). */
 export type PetSummary = Schemas['PetSummary'];
 export type PetUpdate = { name?: string; color?: PetColor };

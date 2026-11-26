@@ -208,8 +208,14 @@ class UsageRepository(Protocol):
 
 
 class PushTokenRepository(Protocol):
-    async def upsert(self, token: PushTokenRecord) -> None: ...
+    async def upsert(self, token: PushTokenRecord) -> None:
+        """Register or refresh. A token seen again moves to the user that sent it last."""
+        ...
+
     async def list_for_user(self, user_id: UUID) -> list[PushTokenRecord]: ...
+    async def delete(self, user_id: UUID, token: str) -> None:
+        """Remove the user's own token. Idempotent: a missing token is not an error."""
+        ...
 
 
 class SubscriptionRepository(Protocol):

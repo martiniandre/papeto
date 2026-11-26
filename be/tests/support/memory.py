@@ -195,6 +195,11 @@ class MemPushTokens:
     async def list_for_user(self, user_id: UUID) -> list[PushTokenRecord]:
         return [t for t in self.s.push_tokens.values() if t.user_id == user_id]
 
+    async def delete(self, user_id: UUID, token: str) -> None:
+        current = self.s.push_tokens.get(token)
+        if current is not None and current.user_id == user_id:
+            del self.s.push_tokens[token]
+
 
 class MemSubscriptions:
     def __init__(self, s: MemoryStore) -> None:

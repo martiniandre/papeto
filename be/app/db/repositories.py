@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from uuid import UUID
 
-from sqlalchemy import and_, func, or_, select, update
+from sqlalchemy import and_, delete, func, or_, select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -446,6 +446,13 @@ class SqlPushTokenRepository:
             )
             for r in rows.scalars()
         ]
+
+    async def delete(self, user_id: UUID, token: str) -> None:
+        await self._s.execute(
+            delete(m.PushTokenModel).where(
+                m.PushTokenModel.user_id == user_id, m.PushTokenModel.token == token
+            )
+        )
 
 
 class SqlSubscriptionRepository:

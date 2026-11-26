@@ -11,6 +11,7 @@ https://claude.ai/artifact/1kwmN9FBtScfqXR6yRmJ2N
 4. **Profile and account:** 8 Profile → 27 Notifications · 36 Export data · 35 Delete account (button enabled only after confirming) → 41 Account deleted → Sign in.
 5. **Premium:** 15 Subscribe (X and "Agora não" close it) → 16 Premium active → 38 Home (subscriber) → 13 Pause (1, 3 or 7 days) → 39 Home paused → Resume. Entry points: Result ("Seus hábitos"), Daily limit, Pause button, Profile. Subscriber versions: 32 Result, 33 Profile, 34 Your subscription.
 6. **Pet lives (shown when opening the app):** 28 Lost a life (day without a log) → 12 Fainted (0 lives) → a logged meal wakes the pet.
+7. **Levels and attributes:** 3 Home shows the level, a progress bar to the next level (from `level_progress`) and an "Atributos" entry, highlighted (amber card, star, "N pontos para distribuir") when `unspent_attribute_points > 0` → 44 Attributes (`/attributes`) → back to Home. A `level_up` event shows a small "Subiu para o nível N!" chip on Home and the celebrating pet art (static with reduced motion; also on 6 Result).
 
 Additions (privacy, safety, manual entry, offline):
 
@@ -36,7 +37,8 @@ large system font, screen reader.
 | 2 Age and terms | none checked; one checked; both checked (Continue enabled) |
 | 43 Name your pet | empty (button disabled); filled; suggestion tapped; 20-char limit |
 | 24 Meet your pet | reveal with the chosen name; color selected |
-| 3 Home | happy; tired; sleepy; fainted; paused; photos used up; first day without meals; subscriber |
+| 3 Home | level and progress; attributes entry with and without unspent points; level up; happy; tired; sleepy; fainted; paused; photos used up; first day without meals; subscriber |
+| 44 Attributes | loading; error with retry; offline (banner, and "Sem conexão" on confirm); no points to spend (steppers disabled, short message); allocating (+/- per attribute, remaining count never below 0, confirm disabled until something is allocated); confirming (explains that spent points are permanent, "Confirmar" / "Voltar e revisar"); saving; success ("Pontos distribuídos!"); points changed (`NOT_ENOUGH_ATTRIBUTE_POINTS`: refetch the pet, clear the draft, show "Seus pontos mudaram") |
 | 9 Camera permission | first request; denied before ("Abrir Ajustes"); gallery only |
 | 4 Camera | live; flash on/off; low light hint; no camera (opens gallery) |
 | 5 Analyzing | analyzing; slow (> 10 s, "Ainda olhando…"); cancelled |

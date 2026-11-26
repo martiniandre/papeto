@@ -11,6 +11,20 @@ export const MOODS: readonly Mood[] = ['happy', 'tired', 'sleepy', 'fainted', 'p
 
 export type PetEvent = Schemas['PetEvent'];
 
+export type Attributes = Schemas['AttributesOut'];
+export type AttributeName = keyof Attributes;
+/** Display order of the five attributes (names only; the numbers always come from the API). */
+export const ATTRIBUTE_NAMES: readonly AttributeName[] = [
+  'strength',
+  'speed',
+  'skill',
+  'endurance',
+  'intelligence',
+];
+export type LevelProgress = Schemas['LevelProgressOut'];
+/** POST /pet/attributes body: positive whole amounts per attribute. */
+export type AttributeAllocations = Partial<Record<AttributeName, number>>;
+
 /**
  * The backend stores the color as a free key (`^[a-z0-9_-]{1,20}$`) and starts every pet with
  * "default". The app offers PET_COLORS and falls back to a neutral halo for unknown keys.
@@ -76,6 +90,7 @@ export type ApiErrorCode =
   | 'PET_NOT_FOUND'
   | 'PET_ALREADY_PAUSED'
   | 'PET_NOT_PAUSED'
+  | 'NOT_ENOUGH_ATTRIBUTE_POINTS'
   | 'INVALID_CURSOR'
   | 'INVALID_RESET_TOKEN'
   | 'NOT_FOUND'

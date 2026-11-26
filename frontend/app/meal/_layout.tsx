@@ -16,6 +16,7 @@ export default function MealLayout() {
       <Stack.Screen name="analyzing" options={{ gestureEnabled: false }} />
       <Stack.Screen name="result" options={{ gestureEnabled: false }} />
       <Stack.Screen name="error" />
+      <Stack.Screen name="manual" />
       <Stack.Screen name="daily-limit" />
       <Stack.Screen name="notifications" options={{ gestureEnabled: false }} />
     </Stack>

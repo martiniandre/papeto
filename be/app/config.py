@@ -37,6 +37,7 @@ class Settings(BaseSettings):
     payment_provider: str = "fake"
     push_provider: str = "fake"  # "fake" or "expo"
     email_provider: str = "fake"
+    analytics_provider: str = "noop"  # "noop" (default, disabled), "fake" or "posthog"
     # Vision: "fake" (default) or "openai_compatible" (candidate adapter, provider not chosen yet).
     vision_api_key: SecretStr | None = None
     vision_model: str | None = None
@@ -46,6 +47,9 @@ class Settings(BaseSettings):
     sentry_dsn: SecretStr | None = None
     posthog_api_key: SecretStr | None = None
     expo_access_token: SecretStr | None = None
+    posthog_host: str = "https://us.i.posthog.com"
+    # Secret mixed into the per-user analytics id. Falls back to a value derived from jwt_secret.
+    analytics_id_secret: SecretStr | None = None
 
     max_upload_bytes: int = 8 * 1024 * 1024
     vision_timeout_seconds: float = 5.0  # per attempt; the pipeline retries once on timeout

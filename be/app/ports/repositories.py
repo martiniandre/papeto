@@ -232,6 +232,10 @@ class MealRepository(Protocol):
 
     async def list_all(self, user_id: UUID) -> list[MealRecord]: ...
 
+    async def delete_all(self, user_id: UUID) -> int:
+        """Hard-delete every meal of the user (deleted ones included). Returns how many rows."""
+        ...
+
 
 class PointsRepository(Protocol):
     async def add_many(self, events: list[PointsEventRecord]) -> None: ...

@@ -1,0 +1,62 @@
+{
+  "expo": {
+    "name": "Papeto",
+    "slug": "papeto",
+    "scheme": "papeto",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/brand/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "app.papeto"
+    },
+    "android": {
+      "package": "app.papeto",
+      "adaptiveIcon": {
+        "backgroundColor": "#4F46E5",
+        "foregroundImage": "./assets/brand/icon.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-status-bar",
+      "expo-secure-store",
+      "expo-localization",
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/brand/icon.png",
+          "imageWidth": 160,
+          "backgroundColor": "#F8F9FC"
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "O Papeto usa a câmera para fotografar o prato. A foto é analisada e descartada logo depois.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "O Papeto abre a galeria para você escolher a foto do prato. A foto não é guardada.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ],
+      "expo-notifications"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

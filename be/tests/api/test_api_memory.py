@@ -8,7 +8,7 @@ import pytest
 
 from app.api.errors import STATUS_BY_CODE
 from app.services.errors import ALL_ERRORS
-from tests.api_cases import ApiCases
+from tests.api_cases import ApiCases, ConsentRevocationCases
 from tests.support.api_env import ApiEnv, build_env
 from tests.support.memory import MemoryUowFactory
 
@@ -27,3 +27,7 @@ class TestApiInMemory(ApiCases):
 def test_every_service_error_code_has_an_http_status() -> None:
     codes = {error.code for error in ALL_ERRORS}
     assert codes <= set(STATUS_BY_CODE)
+
+
+class TestConsentRevocationInMemory(ConsentRevocationCases):
+    pass

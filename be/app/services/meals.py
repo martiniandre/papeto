@@ -122,3 +122,16 @@ async def delete_meal(ctx: ServiceContext, user_id: UUID, meal_id: UUID) -> None
             raise MealNotFound
         await uow.meals.save(replace(meal, deleted_at=ctx.clock.now()))
         await uow.commit()
+
+
+async def delete_all_meals(ctx: ServiceContext, user_id: UUID) -> int:
+    """Erase every meal record of the user; keeps the account, pet, points and streak.
+
+    Always free and allowed without `meal_data` consent (that is the point of revoking it).
+    Usage rows stay, so lives and streak do not change.
+    """
+    async with ctx.uow_factory() as uow:
+        await require_user(uow, user_id)
+        deleted = await uow.meals.delete_all(user_id)
+        await uow.commit()
+    return deleted

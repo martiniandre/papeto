@@ -160,6 +160,12 @@ class MemMeals:
             for item in m.items
         }
 
+    async def delete_all(self, user_id: UUID) -> int:
+        ids = [m.id for m in self.s.meals.values() if m.user_id == user_id]
+        for meal_id in ids:
+            del self.s.meals[meal_id]
+        return len(ids)
+
     async def list_all(self, user_id: UUID) -> list[MealRecord]:
         return sorted(
             (m for m in self.s.meals.values() if m.user_id == user_id),

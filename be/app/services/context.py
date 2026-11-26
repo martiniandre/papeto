@@ -34,3 +34,4 @@ class ServiceContext:
     password_reset_url: str = "papeto://reset-password"
     password_reset_minutes: int = 60
     password_reset_max_per_hour: int = 3
+    analytics_id_secret: str = "local-analytics-secret"

@@ -1,0 +1,50 @@
+name: deploy
+
+# Manual only. Deploys be/ to Fly.io. Migrations run in Fly's release_command (fly.toml).
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+
+# Read-only by default. Nothing here needs to write to the repository.
+permissions:
+  contents: read
+
+# One deploy at a time per environment. A queued deploy waits and is never cancelled mid-rollout.
+concurrency:
+  group: deploy-${{ inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: deploy backend (${{ inputs.environment }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Deploys only from main. The "production" GitHub environment can require a reviewer.
+    if: github.ref == 'refs/heads/main'
+    # The Fly app name comes from the environment variable FLY_APP (set per GitHub environment).
+    environment: ${{ inputs.environment }}
+
+    defaults:
+      run:
+        working-directory: be
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Pinned to a commit SHA (tag v1.6). Update the SHA deliberately, never by a moving tag.
+      - name: Set up flyctl
+        uses: superfly/flyctl-actions/setup-flyctl@ed8efb33836e8b2096c7fd3ba1c8afe303ebbff1 # v1.6
+
+      - name: Deploy to Fly.io
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+          FLY_APP: ${{ vars.FLY_APP }}
+        run: flyctl deploy --config fly.toml --app "$FLY_APP" --remote-only

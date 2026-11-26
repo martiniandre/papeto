@@ -4,9 +4,10 @@ from __future__ import annotations
 
 from dataclasses import replace
 
-from app.domain import new_pet
+from app.domain import ProductEvent, new_pet
 from app.ports import InvalidTokenError, TokenKind
 from app.ports.repositories import DuplicateEmailError, PetRecord, UserRecord
+from app.services.analytics import track
 from app.services.common import parse_timezone
 from app.services.context import ServiceContext
 from app.services.errors import (
@@ -75,6 +76,7 @@ async def register(
             raise EmailAlreadyRegistered from exc
         await uow.pets.add(pet)
         await uow.commit()
+    await track(ctx, user, ProductEvent.SIGNUP_COMPLETED)
     return _issue(ctx, user)
 
 

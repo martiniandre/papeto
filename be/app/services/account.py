@@ -6,8 +6,9 @@ from dataclasses import replace
 from datetime import time, timedelta
 from uuid import UUID
 
-from app.domain import NotificationPrefs
+from app.domain import NotificationPrefs, ProductEvent
 from app.ports.repositories import UserExport
+from app.services.analytics import track
 from app.services.common import current_plan, parse_timezone, require_user
 from app.services.context import ServiceContext
 from app.services.views import MeView
@@ -67,6 +68,7 @@ async def request_deletion(ctx: ServiceContext, user_id: UUID) -> MeView:
         if user.deletion_requested_at is None:
             await uow.users.save(replace(user, deletion_requested_at=ctx.clock.now()))
             await uow.commit()
+            await track(ctx, user, ProductEvent.ACCOUNT_DELETION_REQUESTED)
     return await get_me(ctx, user_id)
 
 
@@ -74,6 +76,7 @@ async def export_user(ctx: ServiceContext, user_id: UUID) -> UserExport:
     """Everything stored about the user. Always free, never behind Premium or consent."""
     async with ctx.uow_factory() as uow:
         user = await require_user(uow, user_id)
+        await track(ctx, user, ProductEvent.EXPORT_REQUESTED)
         return UserExport(
             user=user,
             consents=await uow.consents.list_all(user_id),

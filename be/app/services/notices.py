@@ -14,9 +14,10 @@ from uuid import UUID
 
 import structlog
 
-from app.domain import NoticeKind, compute_mood, decide_notice, pick_copy
+from app.domain import NoticeKind, ProductEvent, compute_mood, decide_notice, pick_copy
 from app.ports import PushOutcome, PushProvider, PushUnavailableError
 from app.ports.repositories import ConsentType, NoticeRecord, UserRecord
+from app.services.analytics import track
 from app.services.common import parse_timezone, settled_state
 from app.services.context import ServiceContext
 from app.services.errors import InvalidTimezone
@@ -103,6 +104,7 @@ async def notify_user(
 
     copy = pick_copy(kind, episode_day)
     stale: list[str] = []
+    delivered = False
     for token in tokens:
         try:
             outcome = await push.send(token.token, copy.title, copy.body)
@@ -111,9 +113,13 @@ async def notify_user(
             continue
         if outcome is PushOutcome.INVALID_TOKEN:
             stale.append(token.token)
+        else:
+            delivered = True
     if stale:
         async with ctx.uow_factory() as uow:
             for token_value in stale:
                 await uow.push_tokens.delete(user.id, token_value)
             await uow.commit()
+    if delivered:
+        await track(ctx, user, ProductEvent.NOTIFICATION_SENT, {"kind": kind.value})
     return kind

@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, Query, Response, UploadFile
 from app.api.deps import Ctx, UserId, get_max_upload_bytes
 from app.api.errors import ApiError, ErrorCode
 from app.api.schemas.meals import (
+    DeletedMealsResponse,
     LogMealResponse,
     ManualMealRequest,
     MealListResponse,
@@ -71,6 +72,12 @@ async def list_meals(
         ctx, user_id, meal_range=meal_range, cursor=cursor, limit=limit
     )
     return MealListResponse.from_page(page)
+
+
+@router.delete("")
+async def remove_all_meals(ctx: Ctx, user_id: UserId) -> DeletedMealsResponse:
+    """Erase every meal record; keeps the account and the pet. Free, no consent needed."""
+    return DeletedMealsResponse(deleted=await meal_service.delete_all_meals(ctx, user_id))
 
 
 @router.get("/{meal_id}")

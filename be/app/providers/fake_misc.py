@@ -6,8 +6,25 @@ from app.ports.push import PushOutcome, PushUnavailableError
 
 
 class NoopAnalytics:
-    def track(self, anonymous_id: str, event: str, properties: dict[str, str | int | bool]) -> None:
+    async def track(
+        self, anonymous_id: str, event: str, properties: dict[str, str | int | bool]
+    ) -> None:
         return None
+
+
+class RecordingAnalytics:
+    """Keeps every event in memory so tests can assert what would have been sent."""
+
+    def __init__(self) -> None:
+        self.events: list[tuple[str, str, dict[str, str | int | bool]]] = []
+
+    async def track(
+        self, anonymous_id: str, event: str, properties: dict[str, str | int | bool]
+    ) -> None:
+        self.events.append((anonymous_id, event, dict(properties)))
+
+    def names(self) -> list[str]:
+        return [name for _, name, _ in self.events]
 
 
 class NoopErrorReporter:

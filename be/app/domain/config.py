@@ -24,6 +24,9 @@ class PetRulesConfig:
     # Not decided yet (pet-rules.md: "ask before implementing"). While None, Premium uses the
     # Free limit so no unapproved number reaches production.
     premium_daily_photo_limit: int | None = None
+    # RF-98 risk pattern: consecutive local days without a log before `support_hint` is raised.
+    # Threshold not decided by the product owner. While None the rule is disabled.
+    risk_pattern_days: int | None = None
 
     def __post_init__(self) -> None:
         if self.max_lives < 1:
@@ -42,6 +45,8 @@ class PetRulesConfig:
             raise ValueError("free_daily_photo_limit must not be negative")
         if self.premium_daily_photo_limit is not None and self.premium_daily_photo_limit < 0:
             raise ValueError("premium_daily_photo_limit must not be negative")
+        if self.risk_pattern_days is not None and self.risk_pattern_days < 1:
+            raise ValueError("risk_pattern_days must be at least 1")
 
 
 DEFAULT_RULES = PetRulesConfig()

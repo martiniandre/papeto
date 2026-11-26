@@ -90,6 +90,13 @@ Fainting or losing lives never removes points, skins or history.
 A failed analysis (unreadable photo, provider error, not food) does not consume the limit.
 A manual entry (RF-95) never consumes the limit; it follows the same lives, streak and points rules as a photo log.
 
+## Risk pattern (RF-98) — threshold not decided, disabled
+
+*(tunable)* `risk_pattern_days = None` (**disabled**: the product owner has not chosen N). When set to N, `GET /v1/pet`
+returns `support_hint: true` if the N completed local days before today all had no log, none was paused, and none
+is before the pet's creation day; a log today clears it. It is a hint for a kind message and the CVV 188 path:
+it never changes lives, streak or points, and never punishes. Do not enable it in production before N is decided.
+
 ## Required tests (minimum)
 
 - Starts with 2 lives; never above 4; never below 0.

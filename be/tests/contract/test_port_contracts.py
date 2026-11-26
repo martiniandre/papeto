@@ -20,6 +20,7 @@ from argon2 import PasswordHasher
 from app.ports import (
     AnalyticsProvider,
     AuthProvider,
+    AuthProviderUnavailableError,
     Clock,
     EmailProvider,
     ErrorReporter,
@@ -31,16 +32,21 @@ from app.ports import (
     PushOutcome,
     PushProvider,
     PushUnavailableError,
+    SocialEmailNotVerifiedError,
+    SocialTokenInvalidError,
     TokenKind,
     VisionUnavailableError,
 )
 from app.providers.expo_push import ExpoPushProvider
 from app.providers.fake_clock import FakeClock, SequentialIdGenerator
+from app.providers.fake_google import FAKE_CLIENT_ID, FakeGoogleIdentity
 from app.providers.fake_misc import NoopAnalytics, NoopErrorReporter, RecordingEmail, RecordingPush
 from app.providers.fake_vision import FakeFoodVision
+from app.providers.google_id_token import GoogleIdTokenVerifier, HttpJwksFetcher
 from app.providers.local_auth import LocalAuthProvider
 from app.providers.system_clock import SystemClock, UuidGenerator
 from app.providers.vision_provider import OpenAICompatibleVision
+from tests.support.builders import fake_google
 
 START = datetime(2026, 3, 10, 12, 0, tzinfo=UTC)
 SAO_PAULO = ZoneInfo("America/Sao_Paulo")
@@ -213,6 +219,82 @@ def test_auth_rejects_token_signed_with_another_secret() -> None:
     token = other.create_token(uuid4(), TokenKind.ACCESS)
     with pytest.raises(InvalidTokenError):
         _local_auth(clock).decode_token(token, TokenKind.ACCESS)
+
+
+def _google_with_fake_jwks(google: FakeGoogleIdentity, clock: Clock) -> AuthProvider:
+    """Fake adapter: the fake identity serves its JWKS in memory."""
+    return LocalAuthProvider(
+        secret="test-secret-with-more-than-32-characters",
+        clock=clock,
+        ids=SequentialIdGenerator(),
+        google=google.verifier(clock),
+    )
+
+
+def _google_with_http_jwks(google: FakeGoogleIdentity, clock: Clock) -> AuthProvider:
+    """Real adapter: HTTP JWKS fetcher (mocked transport) behind the same verifier."""
+
+    def handler(_: httpx.Request) -> httpx.Response:
+        if not google.available:
+            return httpx.Response(503)
+        return httpx.Response(200, json=google.jwks(), headers={"Cache-Control": "max-age=300"})
+
+    fetch = HttpJwksFetcher(client=httpx.AsyncClient(transport=httpx.MockTransport(handler)))
+    verifier = GoogleIdTokenVerifier(client_ids=[FAKE_CLIENT_ID], clock=clock, fetch_jwks=fetch)
+    return LocalAuthProvider(
+        secret="test-secret-with-more-than-32-characters",
+        clock=clock,
+        ids=SequentialIdGenerator(),
+        google=verifier,
+    )
+
+
+GOOGLE_AUTHS: list[Callable[[FakeGoogleIdentity, Clock], AuthProvider]] = [
+    _google_with_fake_jwks,
+    _google_with_http_jwks,
+]
+
+
+@pytest.mark.parametrize("make", GOOGLE_AUTHS)
+async def test_auth_google_accepts_a_valid_token(
+    make: Callable[[FakeGoogleIdentity, Clock], AuthProvider],
+) -> None:
+    google, clock = fake_google(), FakeClock(START)
+    auth = make(google, clock)
+    token = google.issue(subject="sub-1", email="ana@example.com", now=clock.now())
+    identity = await auth.verify_google_id_token(token)
+    assert (identity.subject, identity.email) == ("sub-1", "ana@example.com")
+
+
+@pytest.mark.parametrize("make", GOOGLE_AUTHS)
+async def test_auth_google_failures_use_port_errors(
+    make: Callable[[FakeGoogleIdentity, Clock], AuthProvider],
+) -> None:
+    google, clock = fake_google(), FakeClock(START)
+    auth = make(google, clock)
+    now = clock.now()
+    with pytest.raises(SocialTokenInvalidError):
+        await auth.verify_google_id_token("garbage")
+    google.available = False
+    with pytest.raises(AuthProviderUnavailableError):
+        await auth.verify_google_id_token(google.issue(subject="s", email="a@b.co", now=now))
+    google.available = True
+    with pytest.raises(SocialTokenInvalidError):
+        await auth.verify_google_id_token(
+            google.issue(subject="s", email="a@b.co", now=now, audience="other")
+        )
+    with pytest.raises(SocialEmailNotVerifiedError):
+        await auth.verify_google_id_token(
+            google.issue(subject="s", email="a@b.co", now=now, email_verified=False)
+        )
+
+
+async def test_auth_without_google_configured_rejects_google_tokens() -> None:
+    google, clock = fake_google(), FakeClock(START)
+    with pytest.raises(SocialTokenInvalidError):
+        await _local_auth(clock).verify_google_id_token(
+            google.issue(subject="s", email="a@b.co", now=clock.now())
+        )
 
 
 # --- PushProvider ----------------------------------------------------------------------------

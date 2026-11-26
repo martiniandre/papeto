@@ -64,7 +64,8 @@ Evaluated in this order; the first match wins:
 | `tired` | otherwise (no log today, 2 or more lives) |
 
 Events returned by `POST /v1/meals` and `GET /v1/pet` so the app can play one-shot animations:
-`wake_up`, `life_lost` (lives dropped since the client's last seen value), `celebrate` (gained a life).
+`wake_up`, `life_lost` (lives dropped since the client's last seen value), `celebrate` (gained a life),
+`level_up` (level rose since the client's last seen level, see Levels and attributes).
 
 > Note: the scope doc's state table still describes "sleepy = 2 days without logging". With 2 starting lives
 > that collides with fainting, so this file uses lives instead. Update the scope doc if this is confirmed.
@@ -79,6 +80,24 @@ Events returned by `POST /v1/meals` and `GET /v1/pet` so the app can play one-sh
 
 Points are stored as `points_event` rows (append-only, always positive) and summed for display.
 Fainting or losing lives never removes points, skins or history.
+
+## Levels and attributes
+
+Owner decision, 2026-11-26. In the MVP attributes are **display only**; they will matter in the arena (Phase 3).
+
+| Rule | Value |
+| --- | --- |
+| Experience | The points total (sum of `points_event`). No other source |
+| Level threshold | 100 points per level *(tunable, starting value chosen by the coordinator, owner to confirm)*: level 1 at 0 points, level 2 at 100, level 3 at 200, ... (`level = points // 100 + 1`) |
+| Never down | Points are append-only and never negative, so the level never goes down. Fainting or losing lives never removes levels or attributes |
+| Attribute points | Reaching level N grants N points, so level L has granted `L*(L+1)/2` in total (level 1: 1, level 2: 3, level 3: 6). A new pet at level 1 has 1 point to spend |
+| Attributes | `strength`, `speed`, `skill`, `endurance`, `intelligence` (UI: Força, Velocidade, Habilidade, Resistência, Inteligência). All start at 0 |
+| Spending | The user chooses where each point goes, in positive whole amounts, never more than the unspent points (all or nothing). Spent points are permanent: no reset in the MVP |
+| Event | `level_up` once when the level is higher than the last level returned to the client (several levels at once: one event) |
+| Paying | Never grants levels, points or attributes |
+
+The level is computed from points on read, never stored; only spent attributes and the last level seen by the
+client are stored. Nothing here uses body data, calories or meal judgement.
 
 ## Limits
 
@@ -107,3 +126,5 @@ it never changes lives, streak or points, and never punishes. Do not enable it i
 - Day boundaries in `America/Sao_Paulo` and in a timezone with DST (e.g. `America/New_York`), including a log at 23:59 and 00:01.
 - `settle` is idempotent (calling twice changes nothing).
 - Hitting the daily AI limit never changes lives.
+- Level 1 at 0 points with 1 attribute point; level thresholds every 100 points; several levels crossed in one log;
+  level and attributes never decrease after fainting; spending more than unspent is rejected and changes nothing.

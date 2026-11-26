@@ -19,8 +19,8 @@ jobs:
     timeout-minutes: 20
 
     # Postgres and Redis run as GitHub service containers (no Docker-in-Docker, no Testcontainers).
-    # Alembic reads DATABASE_URL from the environment (be/alembic/env.py). The unit suites do not
-    # use these services; tests/integration still starts its own Postgres via Testcontainers.
+    # Alembic reads DATABASE_URL from the environment (be/alembic/env.py). The integration suite
+    # uses the same service through TEST_DATABASE_URL, so Testcontainers is never started in CI.
     services:
       postgres:
         image: postgres:16
@@ -81,9 +81,18 @@ jobs:
       - name: Architecture boundaries (import-linter)
         run: uv run lint-imports
 
-      - name: Apply migrations
-        if: ${{ hashFiles('be/alembic.ini') != '' }}
-        run: uv run alembic upgrade head
-
       - name: Tests (pytest, unit and contract suites)
         run: uv run pytest -m "not integration"
+
+      # Migrations must work both ways on the service database before the integration suite runs.
+      - name: Migrations round trip (upgrade, downgrade base, upgrade)
+        run: |
+          uv run alembic upgrade head
+          uv run alembic downgrade base
+          uv run alembic upgrade head
+
+      - name: Integration tests (pytest, real Postgres service)
+        env:
+          # Existing service container, not Testcontainers. The suite truncates tables: CI DB only.
+          TEST_DATABASE_URL: postgresql+asyncpg://papeto:papeto@localhost:5432/papeto_test
+        run: uv run pytest -m integration

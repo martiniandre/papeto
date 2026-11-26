@@ -11,13 +11,14 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import models as m
-from app.domain import NotificationPrefs, PetState, PointsReason
+from app.domain import NoticeKind, NotificationPrefs, PetState, PointsReason
 from app.ports.repositories import (
     ConsentRecord,
     ConsentType,
     DuplicateEmailError,
     MealCursor,
     MealRecord,
+    NoticeRecord,
     PauseRecord,
     PaymentEventRecord,
     PetRecord,
@@ -101,6 +102,13 @@ class SqlUserRepository:
         row.password_hash = user.password_hash
         _apply_prefs(row, user.notifications)
         await self._s.flush()
+
+    async def list_notifiable_page(self, *, after: UUID | None, limit: int) -> list[UserRecord]:
+        stmt = select(m.UserModel).where(m.UserModel.deletion_requested_at.is_(None))
+        if after is not None:
+            stmt = stmt.where(m.UserModel.id > after)
+        rows = await self._s.execute(stmt.order_by(m.UserModel.id).limit(limit))
+        return [_user(row) for row in rows.scalars()]
 
 
 def _consent(row: m.ConsentModel) -> ConsentRecord:
@@ -469,6 +477,43 @@ class SqlPushTokenRepository:
                 m.PushTokenModel.user_id == user_id, m.PushTokenModel.token == token
             )
         )
+
+
+class SqlNoticeRepository:
+    def __init__(self, session: AsyncSession) -> None:
+        self._s = session
+
+    async def kinds_in_episode(self, user_id: UUID, episode_day: date) -> set[NoticeKind]:
+        rows = await self._s.execute(
+            select(m.NoticeLogModel.kind).where(
+                m.NoticeLogModel.user_id == user_id, m.NoticeLogModel.episode_day == episode_day
+            )
+        )
+        return {NoticeKind(kind) for kind in rows.scalars()}
+
+    async def count_on_day(self, user_id: UUID, local_day: date) -> int:
+        value = await self._s.scalar(
+            select(func.count())
+            .select_from(m.NoticeLogModel)
+            .where(m.NoticeLogModel.user_id == user_id, m.NoticeLogModel.local_day == local_day)
+        )
+        return int(value or 0)
+
+    async def add_if_new(self, notice: NoticeRecord) -> bool:
+        stmt = (
+            pg_insert(m.NoticeLogModel)
+            .values(
+                id=notice.id,
+                user_id=notice.user_id,
+                kind=notice.kind.value,
+                episode_day=notice.episode_day,
+                local_day=notice.local_day,
+                sent_at=notice.sent_at,
+            )
+            .on_conflict_do_nothing(constraint="uq_notice_log_episode")
+            .returning(m.NoticeLogModel.id)
+        )
+        return (await self._s.execute(stmt)).scalar_one_or_none() is not None
 
 
 class SqlSubscriptionRepository:

@@ -21,6 +21,7 @@ from sqlalchemy import (
     Integer,
     String,
     Time,
+    UniqueConstraint,
     Uuid,
     true,
 )
@@ -147,6 +148,23 @@ class PushTokenModel(Base):
     token: Mapped[str] = mapped_column(String(255), unique=True)
     platform: Mapped[str] = mapped_column(String(16))
     created_at: Mapped[datetime] = _ts()
+
+
+class NoticeLogModel(Base):
+    """Every push notice that was decided, so none is sent twice and the daily cap is enforced."""
+
+    __tablename__ = "notice_log"
+    __table_args__ = (
+        UniqueConstraint("user_id", "kind", "episode_day", name="uq_notice_log_episode"),
+        Index("ix_notice_log_user_day", "user_id", "local_day"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    kind: Mapped[str] = mapped_column(String(16))
+    episode_day: Mapped[date] = mapped_column(Date)
+    local_day: Mapped[date] = mapped_column(Date)
+    sent_at: Mapped[datetime] = _ts()
 
 
 class DailyUsageModel(Base):

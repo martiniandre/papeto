@@ -13,7 +13,7 @@ from types import TracebackType
 from typing import Protocol, Self
 from uuid import UUID
 
-from app.domain import DEFAULT_PREFS, NotificationPrefs, PetState, PointsReason
+from app.domain import DEFAULT_PREFS, NoticeKind, NotificationPrefs, PetState, PointsReason
 
 
 class ConsentType(StrEnum):
@@ -113,6 +113,18 @@ class PushTokenRecord:
 
 
 @dataclass(frozen=True, slots=True)
+class NoticeRecord:
+    """A notice that was decided and sent. `episode_day` is the stretch since the last log."""
+
+    id: UUID
+    user_id: UUID
+    kind: NoticeKind
+    episode_day: date
+    local_day: date
+    sent_at: datetime
+
+
+@dataclass(frozen=True, slots=True)
 class SubscriptionRecord:
     id: UUID
     user_id: UUID
@@ -150,6 +162,9 @@ class UserRepository(Protocol):
     async def get(self, user_id: UUID) -> UserRecord | None: ...
     async def get_by_email(self, email: str) -> UserRecord | None: ...
     async def save(self, user: UserRecord) -> None: ...
+    async def list_notifiable_page(self, *, after: UUID | None, limit: int) -> list[UserRecord]:
+        """Users not pending deletion, ordered by id, strictly after `after`."""
+        ...
 
 
 class ConsentRepository(Protocol):
@@ -219,6 +234,14 @@ class PushTokenRepository(Protocol):
         ...
 
 
+class NoticeRepository(Protocol):
+    async def kinds_in_episode(self, user_id: UUID, episode_day: date) -> set[NoticeKind]: ...
+    async def count_on_day(self, user_id: UUID, local_day: date) -> int: ...
+    async def add_if_new(self, notice: NoticeRecord) -> bool:
+        """False when this (user, kind, episode) already has a notice: nothing is sent twice."""
+        ...
+
+
 class SubscriptionRepository(Protocol):
     async def get(self, user_id: UUID) -> SubscriptionRecord | None: ...
     async def upsert(self, subscription: SubscriptionRecord) -> None: ...
@@ -249,6 +272,8 @@ class UnitOfWork(Protocol):
     def usage(self) -> UsageRepository: ...
     @property
     def push_tokens(self) -> PushTokenRepository: ...
+    @property
+    def notices(self) -> NoticeRepository: ...
     @property
     def subscriptions(self) -> SubscriptionRepository: ...
     @property

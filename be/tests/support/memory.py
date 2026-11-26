@@ -9,13 +9,14 @@ from types import TracebackType
 from typing import Self
 from uuid import UUID
 
-from app.domain import PointsReason
+from app.domain import NoticeKind, PointsReason
 from app.ports.repositories import (
     ConsentRecord,
     ConsentType,
     DuplicateEmailError,
     MealCursor,
     MealRecord,
+    NoticeRecord,
     PauseRecord,
     PaymentEventRecord,
     PetRecord,
@@ -36,6 +37,7 @@ class MemoryStore:
     points: list[PointsEventRecord] = field(default_factory=list)
     usage: dict[tuple[UUID, date], int] = field(default_factory=dict)
     push_tokens: dict[str, PushTokenRecord] = field(default_factory=dict)
+    notices: list[NoticeRecord] = field(default_factory=list)
     subscriptions: dict[UUID, SubscriptionRecord] = field(default_factory=dict)
     payment_events: dict[str, PaymentEventRecord] = field(default_factory=dict)
 
@@ -57,6 +59,17 @@ class MemUsers:
 
     async def save(self, user: UserRecord) -> None:
         self.s.users[user.id] = user
+
+    async def list_notifiable_page(self, *, after: UUID | None, limit: int) -> list[UserRecord]:
+        rows = sorted(
+            (
+                u
+                for u in self.s.users.values()
+                if u.deletion_requested_at is None and (after is None or u.id > after)
+            ),
+            key=lambda u: u.id,
+        )
+        return rows[:limit]
 
 
 class MemConsents:
@@ -201,6 +214,30 @@ class MemPushTokens:
             del self.s.push_tokens[token]
 
 
+class MemNotices:
+    def __init__(self, s: MemoryStore) -> None:
+        self.s = s
+
+    async def kinds_in_episode(self, user_id: UUID, episode_day: date) -> set[NoticeKind]:
+        return {
+            n.kind for n in self.s.notices if n.user_id == user_id and n.episode_day == episode_day
+        }
+
+    async def count_on_day(self, user_id: UUID, local_day: date) -> int:
+        return sum(1 for n in self.s.notices if n.user_id == user_id and n.local_day == local_day)
+
+    async def add_if_new(self, notice: NoticeRecord) -> bool:
+        if any(
+            n.user_id == notice.user_id
+            and n.kind == notice.kind
+            and n.episode_day == notice.episode_day
+            for n in self.s.notices
+        ):
+            return False
+        self.s.notices.append(notice)
+        return True
+
+
 class MemSubscriptions:
     def __init__(self, s: MemoryStore) -> None:
         self.s = s
@@ -234,6 +271,7 @@ class MemoryUnitOfWork:
         self.points = MemPoints(store)
         self.usage = MemUsage(store)
         self.push_tokens = MemPushTokens(store)
+        self.notices = MemNotices(store)
         self.subscriptions = MemSubscriptions(store)
         self.payment_events = MemPaymentEvents(store)
 

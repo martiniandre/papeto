@@ -41,6 +41,7 @@ class LogMealResult:
     meal: MealRecord
     pet: PetView
     events: tuple[PetEvent, ...]
+    pet_tip: str | None = None  # Premium only ("Seus hábitos"); approved phrase, never AI text
 
 
 @dataclass(frozen=True, slots=True)

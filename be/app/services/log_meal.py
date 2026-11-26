@@ -15,7 +15,7 @@ from datetime import date, datetime, timedelta
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
-from app.domain import PointsReason, can_analyze_photo, register_log
+from app.domain import Plan, PointsReason, can_analyze_photo, pick_tip, register_log
 from app.ports import (
     MealType,
     NotFoodError,
@@ -143,6 +143,8 @@ async def log_meal(
         result = await _persist_log(ctx, uow, user_id, today=today, now=now, zone=zone, meal=meal)
         await uow.usage.increment(user_id, today)
         await uow.commit()
+    if plan is Plan.PREMIUM:
+        result = replace(result, pet_tip=pick_tip(meal.food_groups, today))
     return result
 
 

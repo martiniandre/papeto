@@ -10,6 +10,7 @@ from urllib.parse import parse_qs, urlparse
 
 import pytest
 
+from app.domain import TIP_COPY
 from app.providers.fake_misc import RecordingEmail
 from tests.support.api_env import ApiEnv
 from tests.support.builders import PHOTO
@@ -235,13 +236,20 @@ class ApiCases:
         response = await post_meal(env, headers)
         assert response.status_code == 201, response.text
         body = response.json()
-        assert set(body) == {"meal", "pet", "events"}
+        assert set(body) == {"meal", "pet", "events", "pet_tip"}
+        assert body["pet_tip"] is None  # Free plan: no "Seus hábitos" tip
         assert body["pet"]["points"] == 10
         assert body["pet"]["mood"] == "happy"
         assert body["pet"]["streak_days"] == 1
         assert body["events"] == []
         assert body["meal"]["source"] == "photo"
         assert not FORBIDDEN_KEYS & keys_of(body)
+
+    async def test_premium_meal_gets_an_approved_pet_tip(self, env: ApiEnv) -> None:
+        headers = await signup(env)
+        await env.grant_premium(await env.user_id_for("ana@example.com"))
+        body = (await post_meal(env, headers)).json()
+        assert body["pet_tip"] in TIP_COPY.values()
 
     async def test_manual_meal_after_unreadable_photo(self, env: ApiEnv) -> None:
         headers = await signup(env)
@@ -253,7 +261,7 @@ class ApiCases:
         )
         assert response.status_code == 201, response.text
         body = response.json()
-        assert set(body) == {"meal", "pet", "events"}
+        assert set(body) == {"meal", "pet", "events", "pet_tip"}
         assert body["meal"]["source"] == "manual"
         assert body["meal"]["items"] == ["arroz", "feijão"]
         assert body["meal"]["meal_type"] == "lunch"

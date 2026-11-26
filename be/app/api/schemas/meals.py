@@ -52,6 +52,7 @@ class LogMealResponse(BaseModel):
     meal: MealOut
     pet: PetSummary
     events: list[PetEvent]
+    pet_tip: str | None = None  # Premium "Seus hábitos" only; null on Free
 
     @classmethod
     def from_result(cls, result: LogMealResult) -> LogMealResponse:
@@ -59,6 +60,7 @@ class LogMealResponse(BaseModel):
             meal=MealOut.from_record(result.meal),
             pet=PetSummary.from_view(result.pet),
             events=list(result.events),
+            pet_tip=result.pet_tip,
         )
 
 

@@ -35,6 +35,7 @@ from app.domain.pet import (
     settle,
 )
 from app.domain.points import PointsAward, PointsReason, meal_points, points_for_log
+from app.domain.tips import TIP_COPY, missing_food_groups, pick_tip
 
 __all__ = [
     "DEFAULT_PREFS",
@@ -42,6 +43,7 @@ __all__ = [
     "FOOD_GROUPS",
     "MAX_NOTICES_PER_DAY",
     "NOTICE_COPY",
+    "TIP_COPY",
     "LogOutcome",
     "Mood",
     "NoticeCopy",
@@ -65,9 +67,11 @@ __all__ = [
     "local_day",
     "local_day_start",
     "meal_points",
+    "missing_food_groups",
     "new_pet",
     "pause_window_from_instants",
     "pick_copy",
+    "pick_tip",
     "points_for_log",
     "read_events",
     "register_log",

@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 from datetime import date, datetime, time
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 from app.domain import NotificationPrefs, Plan
 from app.ports.repositories import ConsentRecord, ConsentType, UserExport
-from app.services.views import MeView
+from app.services.views import ConsentResult, MeView
 
 
 class ConsentRequest(BaseModel):
@@ -33,6 +34,25 @@ class ConsentOut(BaseModel):
             version=record.version,
             accepted=record.accepted,
             recorded_at=record.created_at,
+        )
+
+
+class ConsentResultOut(ConsentOut):
+    """POST /consents. `suggested_actions` is non-empty only when `meal_data` was revoked."""
+
+    suggested_actions: list[Literal["export", "delete_meals", "delete_account"]]
+
+    @classmethod
+    def from_result(cls, result: ConsentResult) -> ConsentResultOut:
+        record = result.record
+        return cls.model_validate(
+            {
+                "type": record.type,
+                "version": record.version,
+                "accepted": record.accepted,
+                "recorded_at": record.created_at,
+                "suggested_actions": list(result.suggested_actions),
+            }
         )
 
 

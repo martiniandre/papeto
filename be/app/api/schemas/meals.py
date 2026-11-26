@@ -62,6 +62,10 @@ class LogMealResponse(BaseModel):
         )
 
 
+class DeletedMealsResponse(BaseModel):
+    deleted: int
+
+
 class MealListResponse(BaseModel):
     items: list[MealOut]
     next_cursor: str | None

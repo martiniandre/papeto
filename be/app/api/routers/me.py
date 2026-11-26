@@ -8,8 +8,8 @@ from fastapi import APIRouter
 
 from app.api.deps import Ctx, UserId
 from app.api.schemas.account import (
-    ConsentOut,
     ConsentRequest,
+    ConsentResultOut,
     ExportResponse,
     MePatch,
     MeResponse,
@@ -26,11 +26,11 @@ def _parse_hhmm(value: str | None) -> time | None:
 
 
 @router.post("/consents", status_code=201)
-async def post_consent(body: ConsentRequest, ctx: Ctx, user_id: UserId) -> ConsentOut:
-    record = await record_consent(
+async def post_consent(body: ConsentRequest, ctx: Ctx, user_id: UserId) -> ConsentResultOut:
+    result = await record_consent(
         ctx, user_id, consent_type=body.type, version=body.version, accepted=body.accepted
     )
-    return ConsentOut.from_record(record)
+    return ConsentResultOut.from_result(result)
 
 
 @router.get("/me")

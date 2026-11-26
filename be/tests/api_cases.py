@@ -386,6 +386,7 @@ class ApiCases:
             "points": 0,
             "mood": "tired",
             "events": [],
+            "support_hint": False,
         }
         for bad_name in ("x" * 21, "", "   "):
             assert_error(
@@ -489,3 +490,43 @@ class ApiCases:
     @pytest.mark.parametrize("path", ["/v1/me", "/v1/pet", "/v1/meals", "/v1/me/export"])
     async def test_protected_routes_need_auth(self, env: ApiEnv, path: str) -> None:
         assert_error(await env.client.get(path), 401, "UNAUTHORIZED")
+
+
+class ConsentRevocationCases:
+    """Revocation and delete-all-meals over HTTP. Subclass with an `env` fixture."""
+
+    async def test_revoke_meal_data_returns_403_and_follow_ups(self, env: ApiEnv) -> None:
+        headers = await signup(env)
+        assert (await post_meal(env, headers)).status_code == 201
+        revoked = await env.client.post(
+            "/v1/consents",
+            json={"type": "meal_data", "version": "1.0", "accepted": False},
+            headers=headers,
+        )
+        assert revoked.status_code == 201
+        assert revoked.json()["suggested_actions"] == ["export", "delete_meals", "delete_account"]
+        assert_error(await post_meal(env, headers), 403, "MEAL_CONSENT_REQUIRED")
+        assert_error(
+            await env.client.get("/v1/meals", headers=headers), 403, "MEAL_CONSENT_REQUIRED"
+        )
+        assert (await env.client.get("/v1/me/export", headers=headers)).status_code == 200
+        pet = await env.client.get("/v1/pet", headers=headers)
+        assert pet.status_code == 200
+        assert pet.json()["support_hint"] is False
+
+    async def test_delete_all_meals_keeps_pet(self, env: ApiEnv) -> None:
+        headers = await signup(env)
+        await post_meal(env, headers)
+        await env.client.post(
+            "/v1/consents",
+            json={"type": "meal_data", "version": "1.0", "accepted": False},
+            headers=headers,
+        )
+        deleted = await env.client.delete("/v1/meals", headers=headers)
+        assert deleted.status_code == 200
+        assert deleted.json() == {"deleted": 1}
+        export = await env.client.get("/v1/me/export", headers=headers)
+        assert export.json()["meals"] == []
+        pet = await env.client.get("/v1/pet", headers=headers)
+        assert pet.json()["points"] == 10
+        assert_error(await env.client.delete("/v1/meals"), 401, "UNAUTHORIZED")

@@ -355,6 +355,12 @@ class SqlMealRepository:
         )
         return [_meal(row) for row in rows.scalars()]
 
+    async def delete_all(self, user_id: UUID) -> int:
+        result = await self._s.execute(
+            delete(m.MealLogModel).where(m.MealLogModel.user_id == user_id)
+        )
+        return int(result.rowcount or 0)  # type: ignore[attr-defined]
+
 
 def _points(row: m.PointsEventModel) -> PointsEventRecord:
     return PointsEventRecord(

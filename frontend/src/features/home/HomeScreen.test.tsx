@@ -66,6 +66,7 @@ describe('<HomeScreen /> (screen 3)', () => {
     (api.getPet as jest.Mock).mockResolvedValue(pet({ mood: 'happy' }));
     await renderWithProviders(<HomeScreen />);
     expect(await screen.findByTestId('photos-used-up')).toBeOnTheScreen();
+    expect(screen.getByText('2 de 2 fotos com IA hoje · voltam à meia-noite')).toBeOnTheScreen();
     await fireEvent.press(screen.getByRole('button', { name: 'Registrar refeição' }));
     await act(async () => {});
     expect(router.push).toHaveBeenCalledWith('/meal/daily-limit');

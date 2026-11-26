@@ -40,6 +40,7 @@ def _user(row: m.UserModel) -> UserRecord:
         adult_confirmed_at=row.adult_confirmed_at,
         created_at=row.created_at,
         deletion_requested_at=row.deletion_requested_at,
+        anonymized_at=row.anonymized_at,
         notifications=NotificationPrefs(
             meal_reminder=row.notify_meal_reminder,
             sleepy_notice=row.notify_sleepy,
@@ -73,6 +74,7 @@ class SqlUserRepository:
             adult_confirmed_at=user.adult_confirmed_at,
             created_at=user.created_at,
             deletion_requested_at=user.deletion_requested_at,
+            anonymized_at=user.anonymized_at,
         )
         _apply_prefs(row, user.notifications)
         self._s.add(row)
@@ -83,7 +85,7 @@ class SqlUserRepository:
 
     async def get(self, user_id: UUID) -> UserRecord | None:
         row = await self._s.get(m.UserModel, user_id)
-        return _user(row) if row else None
+        return _user(row) if row and row.anonymized_at is None else None
 
     async def get_by_email(self, email: str) -> UserRecord | None:
         row = (
@@ -99,6 +101,7 @@ class SqlUserRepository:
         row.timezone = user.timezone
         row.analytics_opt_out = user.analytics_opt_out
         row.deletion_requested_at = user.deletion_requested_at
+        row.anonymized_at = user.anonymized_at
         row.password_hash = user.password_hash
         _apply_prefs(row, user.notifications)
         await self._s.flush()
@@ -477,6 +480,56 @@ class SqlPushTokenRepository:
                 m.PushTokenModel.user_id == user_id, m.PushTokenModel.token == token
             )
         )
+
+
+class SqlRetentionRepository:
+    def __init__(self, session: AsyncSession) -> None:
+        self._s = session
+
+    async def list_pending_deletion(self, cutoff: datetime, limit: int) -> list[UserRecord]:
+        rows = await self._s.execute(
+            select(m.UserModel)
+            .where(m.UserModel.deletion_requested_at <= cutoff, m.UserModel.anonymized_at.is_(None))
+            .order_by(m.UserModel.deletion_requested_at, m.UserModel.id)
+            .limit(limit)
+        )
+        return [_user(row) for row in rows.scalars()]
+
+    async def erase_personal_data(self, user: UserRecord) -> None:
+        for model in (
+            m.MealLogModel,
+            m.PointsEventModel,
+            m.PauseModel,
+            m.PetModel,
+            m.PushTokenModel,
+            m.NoticeLogModel,
+            m.DailyUsageModel,
+        ):
+            await self._s.execute(delete(model).where(model.user_id == user.id))
+        row = await self._s.get(m.UserModel, user.id)
+        if row is None:
+            raise LookupError("user not found")
+        row.email = user.email
+        row.name = user.name
+        row.password_hash = user.password_hash
+        row.timezone = user.timezone
+        row.analytics_opt_out = user.analytics_opt_out
+        row.anonymized_at = user.anonymized_at
+        _apply_prefs(row, user.notifications)
+        await self._s.flush()
+
+    async def list_anonymized_before(self, cutoff: datetime, limit: int) -> list[UUID]:
+        rows = await self._s.execute(
+            select(m.UserModel.id)
+            .where(m.UserModel.anonymized_at <= cutoff)
+            .order_by(m.UserModel.anonymized_at, m.UserModel.id)
+            .limit(limit)
+        )
+        return list(rows.scalars())
+
+    async def delete_user(self, user_id: UUID) -> None:
+        # consents and subscriptions go with the row (ON DELETE CASCADE)
+        await self._s.execute(delete(m.UserModel).where(m.UserModel.id == user_id))
 
 
 class SqlNoticeRepository:

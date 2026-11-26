@@ -48,6 +48,7 @@ class UserModel(Base):
     adult_confirmed_at: Mapped[datetime] = _ts()
     created_at: Mapped[datetime] = _ts()
     deletion_requested_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    anonymized_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     notify_meal_reminder: Mapped[bool] = mapped_column(Boolean, server_default=true())
     notify_sleepy: Mapped[bool] = mapped_column(Boolean, server_default=true())
     notify_weekly_summary: Mapped[bool] = mapped_column(Boolean, server_default=true())

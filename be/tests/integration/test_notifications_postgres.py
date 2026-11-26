@@ -6,6 +6,7 @@ import pytest
 
 from tests.notice_cases import NoticeCases
 from tests.notification_cases import PreferenceCases, PushTokenCases
+from tests.retention_cases import RetentionCases
 
 pytestmark = pytest.mark.integration
 
@@ -19,4 +20,8 @@ class TestPreferencesPostgres(PreferenceCases):
 
 
 class TestNoticesPostgres(NoticeCases):
+    pass
+
+
+class TestRetentionPostgres(RetentionCases):
     pass

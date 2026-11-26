@@ -13,7 +13,7 @@ from arq.connections import RedisSettings
 
 from app.config import Settings
 from app.container import build_container, build_push
-from app.worker.tasks import PUSH_KEY, SERVICE_CONTEXT_KEY, send_notices
+from app.worker.tasks import PUSH_KEY, SERVICE_CONTEXT_KEY, purge_accounts, send_notices
 
 SHUTDOWN_KEY = "shutdown"
 
@@ -31,10 +31,11 @@ async def on_shutdown(ctx: dict[str, Any]) -> None:
 
 
 class WorkerSettings:
-    functions: ClassVar[list[Any]] = [send_notices]
+    functions: ClassVar[list[Any]] = [send_notices, purge_accounts]
     cron_jobs: ClassVar[list[Any]] = [
         # Every 15 minutes; quiet hours and caps are decided per user in local time.
         cron(send_notices, minute={0, 15, 30, 45}, run_at_startup=False, unique=True),
+        cron(purge_accounts, hour=3, minute=17, run_at_startup=False, unique=True),
     ]
     on_startup = on_startup
     on_shutdown = on_shutdown

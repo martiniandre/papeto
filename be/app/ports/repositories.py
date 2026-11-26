@@ -38,6 +38,7 @@ class UserRecord:
     created_at: datetime
     deletion_requested_at: datetime | None = None
     notifications: NotificationPrefs = DEFAULT_PREFS
+    anonymized_at: datetime | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -159,7 +160,10 @@ class UserExport:
 
 class UserRepository(Protocol):
     async def add(self, user: UserRecord) -> None: ...
-    async def get(self, user_id: UUID) -> UserRecord | None: ...
+    async def get(self, user_id: UUID) -> UserRecord | None:
+        """None for unknown and for anonymized accounts (they are gone for every use case)."""
+        ...
+
     async def get_by_email(self, email: str) -> UserRecord | None: ...
     async def save(self, user: UserRecord) -> None: ...
     async def list_notifiable_page(self, *, after: UUID | None, limit: int) -> list[UserRecord]:
@@ -234,6 +238,27 @@ class PushTokenRepository(Protocol):
         ...
 
 
+class RetentionRepository(Protocol):
+    """Account lifecycle after a deletion request: 30 days pending, then erase, keep legal rows."""
+
+    async def list_pending_deletion(self, cutoff: datetime, limit: int) -> list[UserRecord]:
+        """Not yet anonymized users whose deletion was requested at or before `cutoff`."""
+        ...
+
+    async def erase_personal_data(self, user: UserRecord) -> None:
+        """Delete meals, points, pause history, pet, push tokens, notice log and usage, and
+        store the anonymized `user` row. Consents and the subscription stay (legal retention)."""
+        ...
+
+    async def list_anonymized_before(self, cutoff: datetime, limit: int) -> list[UUID]:
+        """Ids of users anonymized at or before `cutoff` (legal retention has ended)."""
+        ...
+
+    async def delete_user(self, user_id: UUID) -> None:
+        """Remove the user row and everything still attached (consents, subscription)."""
+        ...
+
+
 class NoticeRepository(Protocol):
     async def kinds_in_episode(self, user_id: UUID, episode_day: date) -> set[NoticeKind]: ...
     async def count_on_day(self, user_id: UUID, local_day: date) -> int: ...
@@ -272,6 +297,8 @@ class UnitOfWork(Protocol):
     def usage(self) -> UsageRepository: ...
     @property
     def push_tokens(self) -> PushTokenRepository: ...
+    @property
+    def retention(self) -> RetentionRepository: ...
     @property
     def notices(self) -> NoticeRepository: ...
     @property

@@ -21,6 +21,7 @@ from app.db.repositories import (
     SqlPetRepository,
     SqlPointsRepository,
     SqlPushTokenRepository,
+    SqlRetentionRepository,
     SqlSubscriptionRepository,
     SqlUsageRepository,
     SqlUserRepository,
@@ -49,6 +50,7 @@ class SqlUnitOfWork:
         self.points = SqlPointsRepository(session)
         self.usage = SqlUsageRepository(session)
         self.push_tokens = SqlPushTokenRepository(session)
+        self.retention = SqlRetentionRepository(session)
         self.notices = SqlNoticeRepository(session)
         self.subscriptions = SqlSubscriptionRepository(session)
         self.payment_events = SqlPaymentEventRepository(session)

@@ -52,7 +52,8 @@ class MemUsers:
         self.s.users[user.id] = user
 
     async def get(self, user_id: UUID) -> UserRecord | None:
-        return self.s.users.get(user_id)
+        user = self.s.users.get(user_id)
+        return user if user is not None and user.anonymized_at is None else None
 
     async def get_by_email(self, email: str) -> UserRecord | None:
         return next((u for u in self.s.users.values() if u.email == email), None)
@@ -214,6 +215,45 @@ class MemPushTokens:
             del self.s.push_tokens[token]
 
 
+class MemRetention:
+    def __init__(self, s: MemoryStore) -> None:
+        self.s = s
+
+    async def list_pending_deletion(self, cutoff: datetime, limit: int) -> list[UserRecord]:
+        rows = [
+            u
+            for u in self.s.users.values()
+            if u.anonymized_at is None
+            and u.deletion_requested_at is not None
+            and u.deletion_requested_at <= cutoff
+        ]
+        rows.sort(key=lambda u: (u.deletion_requested_at or cutoff, u.id))
+        return rows[:limit]
+
+    async def erase_personal_data(self, user: UserRecord) -> None:
+        uid = user.id
+        self.s.meals = {k: v for k, v in self.s.meals.items() if v.user_id != uid}
+        self.s.points = [e for e in self.s.points if e.user_id != uid]
+        self.s.pauses = [p for p in self.s.pauses if p.user_id != uid]
+        self.s.pets.pop(uid, None)
+        self.s.push_tokens = {k: v for k, v in self.s.push_tokens.items() if v.user_id != uid}
+        self.s.notices = [n for n in self.s.notices if n.user_id != uid]
+        self.s.usage = {k: v for k, v in self.s.usage.items() if k[0] != uid}
+        self.s.users[uid] = user
+
+    async def list_anonymized_before(self, cutoff: datetime, limit: int) -> list[UUID]:
+        rows = sorted(
+            (u for u in self.s.users.values() if u.anonymized_at and u.anonymized_at <= cutoff),
+            key=lambda u: (u.anonymized_at or cutoff, u.id),
+        )
+        return [u.id for u in rows[:limit]]
+
+    async def delete_user(self, user_id: UUID) -> None:
+        self.s.users.pop(user_id, None)
+        self.s.consents = [c for c in self.s.consents if c.user_id != user_id]
+        self.s.subscriptions.pop(user_id, None)
+
+
 class MemNotices:
     def __init__(self, s: MemoryStore) -> None:
         self.s = s
@@ -271,6 +311,7 @@ class MemoryUnitOfWork:
         self.points = MemPoints(store)
         self.usage = MemUsage(store)
         self.push_tokens = MemPushTokens(store)
+        self.retention = MemRetention(store)
         self.notices = MemNotices(store)
         self.subscriptions = MemSubscriptions(store)
         self.payment_events = MemPaymentEvents(store)

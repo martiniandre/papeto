@@ -16,11 +16,12 @@ from app.main import create_app
 from app.ports import FoodVisionProvider
 from app.ports.repositories import SubscriptionRecord, UnitOfWork
 from app.providers.fake_clock import FakeClock, SequentialIdGenerator
+from app.providers.fake_google import FakeGoogleIdentity
 from app.providers.fake_misc import NoopAnalytics, NoopErrorReporter, RecordingEmail
 from app.providers.fake_vision import FakeFoodVision
 from app.providers.local_auth import LocalAuthProvider
 from app.services.context import ServiceContext
-from tests.support.builders import FAST_HASHER, JWT_SECRET, START
+from tests.support.builders import FAST_HASHER, JWT_SECRET, START, fake_google
 
 UowFactory = Callable[[], UnitOfWork]
 
@@ -31,6 +32,7 @@ class ApiEnv:
     client: httpx.AsyncClient
     clock: FakeClock
     ctx: ServiceContext
+    google: FakeGoogleIdentity
 
     def next_day(self, days: int = 1) -> None:
         self.clock.advance(timedelta(days=days))
@@ -64,6 +66,7 @@ def build_env(
 ) -> ApiEnv:
     clock = FakeClock(START)
     ids = SequentialIdGenerator()
+    google = fake_google()
     ctx = ServiceContext(
         uow_factory=uow_factory,
         clock=clock,
@@ -75,6 +78,7 @@ def build_env(
             ids=ids,
             access_minutes=60 * 24 * 365,  # tests move the fake clock by days
             hasher=FAST_HASHER,
+            google=google.verifier(clock),
         ),
         analytics=NoopAnalytics(),
         error_reporter=NoopErrorReporter(),
@@ -90,4 +94,4 @@ def build_env(
     settings = Settings(jwt_secret=JWT_SECRET, max_upload_bytes=max_upload_bytes, log_level="ERROR")  # type: ignore[arg-type]
     app = create_app(settings, Container(ctx=ctx, readiness=readiness, shutdown=shutdown))
     client = httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test")
-    return ApiEnv(app=app, client=client, clock=clock, ctx=ctx)
+    return ApiEnv(app=app, client=client, clock=clock, ctx=ctx, google=google)

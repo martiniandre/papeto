@@ -11,8 +11,9 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import models as m
-from app.domain import NoticeKind, NotificationPrefs, PetState, PointsReason
+from app.domain import Attributes, NoticeKind, NotificationPrefs, PetState, PointsReason
 from app.ports.repositories import (
+    AuthMethod,
     ConsentRecord,
     ConsentType,
     DuplicateEmailError,
@@ -43,6 +44,8 @@ def _user(row: m.UserModel) -> UserRecord:
         created_at=row.created_at,
         deletion_requested_at=row.deletion_requested_at,
         anonymized_at=row.anonymized_at,
+        auth_provider=AuthMethod(row.auth_provider),
+        google_subject=row.google_subject,
         notifications=NotificationPrefs(
             meal_reminder=row.notify_meal_reminder,
             sleepy_notice=row.notify_sleepy,
@@ -77,6 +80,8 @@ class SqlUserRepository:
             created_at=user.created_at,
             deletion_requested_at=user.deletion_requested_at,
             anonymized_at=user.anonymized_at,
+            auth_provider=user.auth_provider.value,
+            google_subject=user.google_subject,
         )
         _apply_prefs(row, user.notifications)
         self._s.add(row)
@@ -95,6 +100,12 @@ class SqlUserRepository:
         ).scalar_one_or_none()
         return _user(row) if row else None
 
+    async def get_by_google_subject(self, subject: str) -> UserRecord | None:
+        row = (
+            await self._s.execute(select(m.UserModel).where(m.UserModel.google_subject == subject))
+        ).scalar_one_or_none()
+        return _user(row) if row and row.anonymized_at is None else None
+
     async def save(self, user: UserRecord) -> None:
         row = await self._s.get(m.UserModel, user.id)
         if row is None:
@@ -105,8 +116,13 @@ class SqlUserRepository:
         row.deletion_requested_at = user.deletion_requested_at
         row.anonymized_at = user.anonymized_at
         row.password_hash = user.password_hash
+        row.adult_confirmed_at = user.adult_confirmed_at
+        row.google_subject = user.google_subject
         _apply_prefs(row, user.notifications)
-        await self._s.flush()
+        try:
+            await self._s.flush()
+        except IntegrityError as exc:
+            raise DuplicateEmailError from exc
 
     async def list_notifiable_page(self, *, after: UUID | None, limit: int) -> list[UserRecord]:
         stmt = select(m.UserModel).where(m.UserModel.deletion_requested_at.is_(None))
@@ -174,6 +190,14 @@ def _pet(row: m.PetModel) -> PetRecord:
         ),
         last_seen_lives=row.last_seen_lives,
         created_at=row.created_at,
+        attributes=Attributes(
+            strength=row.attr_strength,
+            speed=row.attr_speed,
+            skill=row.attr_skill,
+            endurance=row.attr_endurance,
+            intelligence=row.attr_intelligence,
+        ),
+        last_seen_level=row.last_seen_level,
     )
 
 
@@ -186,6 +210,12 @@ def _apply_pet(row: m.PetModel, pet: PetRecord) -> None:
     row.settled_on = pet.state.settled_on
     row.rest_until = pet.state.rest_until
     row.last_seen_lives = pet.last_seen_lives
+    row.attr_strength = pet.attributes.strength
+    row.attr_speed = pet.attributes.speed
+    row.attr_skill = pet.attributes.skill
+    row.attr_endurance = pet.attributes.endurance
+    row.attr_intelligence = pet.attributes.intelligence
+    row.last_seen_level = pet.last_seen_level
 
 
 class SqlPetRepository:
@@ -600,6 +630,7 @@ class SqlRetentionRepository:
         row.timezone = user.timezone
         row.analytics_opt_out = user.analytics_opt_out
         row.anonymized_at = user.anonymized_at
+        row.google_subject = user.google_subject
         _apply_prefs(row, user.notifications)
         await self._s.flush()
 

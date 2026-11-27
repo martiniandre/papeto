@@ -13,6 +13,7 @@ import type {
   MealPage,
   MealRange,
   MeUpdate,
+  AttributeAllocations,
   Pet,
   PetUpdate,
   PushTokenInput,
@@ -56,6 +57,9 @@ export const api = {
 
   getPet: () => request<Pet>('/pet'),
   updatePet: (input: PetUpdate) => request<Pet>('/pet', { method: 'PATCH', body: input }),
+  /** Spends unspent attribute points for good (no reset). 400 `NOT_ENOUGH_ATTRIBUTE_POINTS` spends nothing. */
+  spendAttributes: (allocations: AttributeAllocations) =>
+    request<Pet>('/pet/attributes', { method: 'POST', body: { allocations } }),
 
   /** `photo` must already be resized (see features/meal/resizePhoto). */
   createMeal: (photoUri: string, signal?: AbortSignal) => {

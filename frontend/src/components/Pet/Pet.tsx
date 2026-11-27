@@ -10,7 +10,7 @@ import { celebratingArt, moodArt } from './art';
 
 export interface PetProps {
   mood: Mood;
-  /** One-shot events from the API (`celebrate`, `wake_up`, `life_lost`). */
+  /** One-shot events from the API (`celebrate`, `wake_up`, `life_lost`, `level_up`). */
   events?: readonly PetEvent[];
   name: string;
   size?: number;
@@ -18,6 +18,10 @@ export interface PetProps {
 }
 
 const CELEBRATION_MS = 2500;
+
+/** Events that play the one-shot celebration art. */
+const hasCelebrationEvent = (events: readonly PetEvent[]) =>
+  events.some((event) => event === 'celebrate' || event === 'wake_up' || event === 'level_up');
 
 /**
  * Renders what the API says: the app never computes the mood.
@@ -31,7 +35,7 @@ export function Pet({ mood, events = [], name, size = 220, className }: PetProps
   // Key of the events whose celebration already finished (derived state: no setState in the effect body).
   const [finishedKey, setFinishedKey] = useState('');
   const eventsKey = events.join(',');
-  const hasCelebration = events.includes('celebrate') || events.includes('wake_up');
+  const hasCelebration = hasCelebrationEvent(events);
 
   // Announce and play one-shot events.
   useEffect(() => {
@@ -41,7 +45,7 @@ export function Pet({ mood, events = [], name, size = 220, className }: PetProps
       AccessibilityInfo.announceForAccessibility(t(`pet.events.${event}`, { name }));
     }
     if (reduceMotion) return;
-    if (list.includes('celebrate') || list.includes('wake_up')) {
+    if (hasCelebrationEvent(list)) {
       const timer = setTimeout(() => setFinishedKey(eventsKey), CELEBRATION_MS);
       return () => clearTimeout(timer);
     }

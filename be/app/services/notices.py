@@ -61,6 +61,8 @@ async def notify_user(
     ctx: ServiceContext, push: PushProvider, user: UserRecord
 ) -> NoticeKind | None:
     """The notice sent to this user now, or None."""
+    if user.adult_confirmed_at is None:
+        return None  # no pet notices before the 18+ confirmation (social sign-up)
     try:
         timezone = parse_timezone(user.timezone)
     except InvalidTimezone:

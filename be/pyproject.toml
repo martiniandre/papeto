@@ -18,7 +18,7 @@ dependencies = [
     "tzdata",
     "uvicorn>=0.54.0",
     "python-multipart>=0.0.34",
-    "pyjwt>=2.15.1",
+    "pyjwt[crypto]>=2.15.1",
     "argon2-cffi>=25.1.0",
     "email-validator>=2.4.0",
     "httpx>=0.28.1",

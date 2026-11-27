@@ -130,8 +130,36 @@
     "events": {
       "celebrate": "{{name}} ganhou uma vida!",
       "wake_up": "{{name}} acordou!",
-      "life_lost": "{{name}} perdeu uma vida."
+      "life_lost": "{{name}} perdeu uma vida.",
+      "level_up": "{{name}} subiu de nível!"
     }
+  },
+  "attributes": {
+    "title": "Atributos",
+    "level": "Nível {{level}}",
+    "remaining_one": "{{count}} ponto para distribuir",
+    "remaining_other": "{{count}} pontos para distribuir",
+    "none": "Sem pontos para distribuir agora. Você ganha mais ao subir de nível.",
+    "permanent": "Pontos distribuídos ficam para sempre. Não dá para desfazer.",
+    "displayOnly": "Por enquanto, os atributos são só para exibição.",
+    "names": {
+      "strength": "Força",
+      "speed": "Velocidade",
+      "skill": "Habilidade",
+      "endurance": "Resistência",
+      "intelligence": "Inteligência"
+    },
+    "value": "{{name}}: {{count}}",
+    "increase": "Aumentar {{name}}",
+    "decrease": "Diminuir {{name}}",
+    "confirm": "Distribuir pontos",
+    "confirmTitle": "Confirmar a distribuição?",
+    "confirmBody": "Depois de confirmar, estes pontos não podem ser desfeitos.",
+    "confirmYes": "Confirmar",
+    "confirmBack": "Voltar e revisar",
+    "saving": "Distribuindo…",
+    "success": "Pontos distribuídos!",
+    "done": "Pronto"
   },
   "hearts": {
     "a11y": "{{lives}} de {{max}} vidas"
@@ -151,7 +179,14 @@
     "points_one": "{{count}} ponto",
     "points_other": "{{count}} pontos",
     "logMeal": "Registrar refeição",
-    "photosUsedUp": "2 de 2 fotos com IA hoje · voltam à meia-noite"
+    "photosUsedUp": "2 de 2 fotos com IA hoje · voltam à meia-noite",
+    "level": "Nível {{level}}",
+    "levelUp": "Subiu para o nível {{level}}!",
+    "levelProgress": "{{points}} de {{next}} pontos para o próximo nível",
+    "attributes": "Atributos",
+    "attributesUnspent_one": "{{count}} ponto para distribuir",
+    "attributesUnspent_other": "{{count}} pontos para distribuir",
+    "attributesOpen": "Abrir atributos"
   },
   "tabs": {
     "home": "Início",
@@ -479,6 +514,7 @@
     "GOOGLE_EMAIL_NOT_VERIFIED": "O e-mail desta conta Google não foi verificado. Verifique-o no Google ou entre com outro e-mail.",
     "AUTH_PROVIDER_UNAVAILABLE": "O login com Google está fora do ar agora. Tente em alguns minutos ou use o e-mail.",
     "ADULT_CONFIRMATION_REQUIRED": "Antes de continuar, confirme que você tem 18 anos ou mais.",
+    "NOT_ENOUGH_ATTRIBUTE_POINTS": "Seus pontos mudaram. Confira os valores e tente de novo.",
     "INVALID_RESET_TOKEN": "Este link não vale mais. Peça um novo link para criar a senha."
   }
 }

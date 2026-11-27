@@ -1,17 +1,22 @@
-"""AuthProvider adapter: Argon2 password hashes and HS256 JWTs (PyJWT)."""
+"""AuthProvider adapter: Argon2 password hashes, HS256 JWTs (PyJWT) and Google ID token checks."""
 
 from __future__ import annotations
 
 from datetime import timedelta
+from typing import Protocol
 from uuid import UUID
 
 import jwt
 from argon2 import PasswordHasher
 from argon2.exceptions import InvalidHashError, VerificationError
 
-from app.ports.auth import InvalidTokenError, TokenKind
+from app.ports.auth import GoogleIdentity, InvalidTokenError, SocialTokenInvalidError, TokenKind
 from app.ports.clock import Clock
 from app.ports.ids import IdGenerator
+
+
+class GoogleTokenVerifier(Protocol):
+    async def verify(self, id_token: str) -> GoogleIdentity: ...
 
 
 class LocalAuthProvider:
@@ -25,6 +30,7 @@ class LocalAuthProvider:
         refresh_days: int = 30,
         algorithm: str = "HS256",
         hasher: PasswordHasher | None = None,
+        google: GoogleTokenVerifier | None = None,
     ) -> None:
         if len(secret) < 16:
             raise ValueError("JWT secret is too short")
@@ -35,6 +41,7 @@ class LocalAuthProvider:
         self._refresh = timedelta(days=refresh_days)
         self._algorithm = algorithm
         self._hasher = hasher or PasswordHasher()
+        self._google = google
 
     @property
     def access_ttl_seconds(self) -> int:
@@ -81,3 +88,8 @@ class LocalAuthProvider:
             return UUID(str(claims["sub"]))
         except (jwt.PyJWTError, ValueError, KeyError) as exc:
             raise InvalidTokenError("invalid token") from exc
+
+    async def verify_google_id_token(self, id_token: str) -> GoogleIdentity:
+        if self._google is None:
+            raise SocialTokenInvalidError("Google sign-in is not configured")
+        return await self._google.verify(id_token)

@@ -20,6 +20,8 @@ class PetRulesConfig:
     points_per_meal: int = 10
     max_scored_meals_per_day: int = 3
     wake_up_points: int = 5
+    # Levels: experience is the points total; one level per this many points.
+    points_per_level: int = 100
     free_daily_photo_limit: int = 2
     # Not decided yet (pet-rules.md: "ask before implementing"). While None, Premium uses the
     # Free limit so no unapproved number reaches production.
@@ -39,6 +41,8 @@ class PetRulesConfig:
             raise ValueError("streak_days_per_life must be at least 1")
         if self.points_per_meal <= 0 or self.wake_up_points <= 0:
             raise ValueError("points are always positive")
+        if self.points_per_level < 1:
+            raise ValueError("points_per_level must be at least 1")
         if self.max_scored_meals_per_day < 0:
             raise ValueError("max_scored_meals_per_day must not be negative")
         if self.free_daily_photo_limit < 0:

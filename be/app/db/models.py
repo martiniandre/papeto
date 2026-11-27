@@ -45,10 +45,12 @@ class UserModel(Base):
     name: Mapped[str] = mapped_column(String(100))
     timezone: Mapped[str] = mapped_column(String(64))
     analytics_opt_out: Mapped[bool] = mapped_column(Boolean, default=False)
-    adult_confirmed_at: Mapped[datetime] = _ts()
+    adult_confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = _ts()
     deletion_requested_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     anonymized_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    auth_provider: Mapped[str] = mapped_column(String(16), server_default="email")
+    google_subject: Mapped[str | None] = mapped_column(String(255), unique=True)
     notify_meal_reminder: Mapped[bool] = mapped_column(Boolean, server_default=true())
     notify_sleepy: Mapped[bool] = mapped_column(Boolean, server_default=true())
     notify_weekly_summary: Mapped[bool] = mapped_column(Boolean, server_default=true())
@@ -75,6 +77,11 @@ class PetModel(Base):
     __table_args__ = (
         CheckConstraint("lives >= 0", name="ck_pets_lives_non_negative"),
         CheckConstraint("streak_days >= 0", name="ck_pets_streak_non_negative"),
+        CheckConstraint(
+            "attr_strength >= 0 AND attr_speed >= 0 AND attr_skill >= 0"
+            " AND attr_endurance >= 0 AND attr_intelligence >= 0",
+            name="ck_pets_attributes_non_negative",
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)
@@ -90,6 +97,13 @@ class PetModel(Base):
     rest_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     last_seen_lives: Mapped[int | None] = mapped_column(Integer)
     created_at: Mapped[datetime] = _ts()
+    # Spent attribute points (display only in the MVP). The level itself is computed from points.
+    attr_strength: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    attr_speed: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    attr_skill: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    attr_endurance: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    attr_intelligence: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    last_seen_level: Mapped[int | None] = mapped_column(Integer)
 
 
 class PauseModel(Base):

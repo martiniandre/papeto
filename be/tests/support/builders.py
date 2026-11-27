@@ -10,6 +10,7 @@ from argon2 import PasswordHasher
 
 from app.ports.repositories import ConsentType, SubscriptionRecord, UnitOfWork
 from app.providers.fake_clock import FakeClock, SequentialIdGenerator
+from app.providers.fake_google import FakeGoogleIdentity, new_rsa_key
 from app.providers.fake_misc import NoopAnalytics, NoopErrorReporter, RecordingEmail
 from app.providers.fake_vision import FakeFoodVision
 from app.providers.local_auth import LocalAuthProvider
@@ -23,6 +24,12 @@ START = datetime(2026, 3, 10, 12, 0, tzinfo=UTC)
 PHOTO = b"\xff\xd8\xff fake jpeg bytes"
 JWT_SECRET = "test-secret-with-more-than-32-characters"
 FAST_HASHER = PasswordHasher(time_cost=1, memory_cost=8, parallelism=1)
+_GOOGLE_KEY = new_rsa_key()  # RSA generation is slow; one key for the whole test run
+
+
+def fake_google() -> FakeGoogleIdentity:
+    """A fresh fake Google identity (own outage flag and fetch count) sharing the test key."""
+    return FakeGoogleIdentity(private_key=_GOOGLE_KEY)
 
 
 @dataclass
@@ -53,6 +60,7 @@ def make_world(uow_factory: MemoryUowFactory | None = None) -> World:
             ids=ids,
             access_minutes=60 * 24 * 365,  # tests move the fake clock by days
             hasher=FAST_HASHER,
+            google=fake_google().verifier(clock),
         ),
         analytics=NoopAnalytics(),
         error_reporter=NoopErrorReporter(),

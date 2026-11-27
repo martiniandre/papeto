@@ -52,7 +52,15 @@ class MemUsers:
     async def add(self, user: UserRecord) -> None:
         if any(u.email == user.email for u in self.s.users.values()):
             raise DuplicateEmailError
+        if self._subject_taken(user):
+            raise DuplicateEmailError
         self.s.users[user.id] = user
+
+    def _subject_taken(self, user: UserRecord) -> bool:
+        return user.google_subject is not None and any(
+            u.google_subject == user.google_subject and u.id != user.id
+            for u in self.s.users.values()
+        )
 
     async def get(self, user_id: UUID) -> UserRecord | None:
         user = self.s.users.get(user_id)
@@ -61,7 +69,19 @@ class MemUsers:
     async def get_by_email(self, email: str) -> UserRecord | None:
         return next((u for u in self.s.users.values() if u.email == email), None)
 
+    async def get_by_google_subject(self, subject: str) -> UserRecord | None:
+        return next(
+            (
+                u
+                for u in self.s.users.values()
+                if u.google_subject == subject and u.anonymized_at is None
+            ),
+            None,
+        )
+
     async def save(self, user: UserRecord) -> None:
+        if self._subject_taken(user):
+            raise DuplicateEmailError
         self.s.users[user.id] = user
 
     async def list_notifiable_page(self, *, after: UUID | None, limit: int) -> list[UserRecord]:

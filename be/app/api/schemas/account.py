@@ -100,6 +100,7 @@ class MeResponse(BaseModel):
     timezone: str
     plan: Plan
     analytics_opt_out: bool
+    adult_confirmed: bool
     notifications: NotificationsOut
     consents: list[ConsentOut]
     deletion_scheduled_for: datetime | None
@@ -113,6 +114,7 @@ class MeResponse(BaseModel):
             timezone=view.user.timezone,
             plan=view.plan,
             analytics_opt_out=view.user.analytics_opt_out,
+            adult_confirmed=view.user.adult_confirmed_at is not None,
             notifications=NotificationsOut.from_prefs(view.user.notifications),
             consents=[ConsentOut.from_record(c) for c in view.consents.values()],
             deletion_scheduled_for=view.deletion_scheduled_for,
@@ -124,6 +126,8 @@ class MePatch(BaseModel):
 
     timezone: str | None = Field(default=None, max_length=64)
     analytics_opt_out: bool | None = None
+    # Only `true` is accepted: the 18+ confirmation cannot be withdrawn through the API.
+    adult_confirmed: Literal[True] | None = None
     notifications: NotificationsPatch | None = None
 
 
@@ -174,8 +178,10 @@ class ExportUser(BaseModel):
     timezone: str
     analytics_opt_out: bool
     created_at: datetime
-    adult_confirmed_at: datetime
+    adult_confirmed_at: datetime | None
     deletion_requested_at: datetime | None
+    auth_provider: str
+    google_subject: str | None
 
 
 class ExportResponse(BaseModel):
@@ -202,6 +208,8 @@ class ExportResponse(BaseModel):
                 created_at=user.created_at,
                 adult_confirmed_at=user.adult_confirmed_at,
                 deletion_requested_at=user.deletion_requested_at,
+                auth_provider=user.auth_provider.value,
+                google_subject=user.google_subject,
             ),
             consents=[ConsentOut.from_record(c) for c in data.consents],
             pet=ExportPet(

@@ -6,6 +6,18 @@ Public API re-exported here so services import from `app.domain` only.
 from app.domain.config import DEFAULT_RULES, PetRulesConfig
 from app.domain.events import ProductEvent
 from app.domain.food_groups import FOOD_GROUPS, known_food_groups
+from app.domain.levels import (
+    Attribute,
+    Attributes,
+    LevelProgress,
+    NotEnoughAttributePointsError,
+    attribute_points_granted,
+    level_events,
+    level_for_points,
+    level_progress,
+    spend_attribute_points,
+    unspent_attribute_points,
+)
 from app.domain.limits import Plan, can_analyze_photo, daily_photo_limit, remaining_photos
 from app.domain.local_days import (
     PauseWindow,
@@ -46,8 +58,12 @@ __all__ = [
     "MAX_NOTICES_PER_DAY",
     "NOTICE_COPY",
     "TIP_COPY",
+    "Attribute",
+    "Attributes",
+    "LevelProgress",
     "LogOutcome",
     "Mood",
+    "NotEnoughAttributePointsError",
     "NoticeCopy",
     "NoticeKind",
     "NotificationPrefs",
@@ -59,6 +75,7 @@ __all__ = [
     "PointsAward",
     "PointsReason",
     "ProductEvent",
+    "attribute_points_granted",
     "can_analyze_photo",
     "compute_mood",
     "daily_photo_limit",
@@ -67,6 +84,9 @@ __all__ = [
     "is_paused",
     "is_paused_on",
     "known_food_groups",
+    "level_events",
+    "level_for_points",
+    "level_progress",
     "local_day",
     "local_day_start",
     "meal_points",
@@ -81,4 +101,6 @@ __all__ = [
     "register_log",
     "remaining_photos",
     "settle",
+    "spend_attribute_points",
+    "unspent_attribute_points",
 ]

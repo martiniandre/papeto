@@ -11,6 +11,20 @@ export const MOODS: readonly Mood[] = ['happy', 'tired', 'sleepy', 'fainted', 'p
 
 export type PetEvent = Schemas['PetEvent'];
 
+export type Attributes = Schemas['AttributesOut'];
+export type AttributeName = keyof Attributes;
+/** Display order of the five attributes (names only; the numbers always come from the API). */
+export const ATTRIBUTE_NAMES: readonly AttributeName[] = [
+  'strength',
+  'speed',
+  'skill',
+  'endurance',
+  'intelligence',
+];
+export type LevelProgress = Schemas['LevelProgressOut'];
+/** POST /pet/attributes body: positive whole amounts per attribute. */
+export type AttributeAllocations = Partial<Record<AttributeName, number>>;
+
 /**
  * The backend stores the color as a free key (`^[a-z0-9_-]{1,20}$`) and starts every pet with
  * "default". The app offers PET_COLORS and falls back to a neutral halo for unknown keys.
@@ -35,13 +49,8 @@ export type ConsentRecord = Schemas['ConsentOut'];
 export type DataExport = Schemas['ExportResponse'];
 
 export type Plan = Schemas['Plan'];
-/**
- * TEMPORARY hand-written additions (Google sign-in, 2026-11-26): the backend is not merged yet.
- * `adult_confirmed` on GET/PATCH /v1/me and POST /v1/auth/google. When `npm run api:types` brings
- * these into schema.gen.ts, delete the intersections below and alias the generated schemas again.
- */
-export type Me = Schemas['MeResponse'] & { adult_confirmed: boolean };
-export type MeUpdate = Schemas['MePatch'] & { adult_confirmed?: boolean };
+export type Me = Schemas['MeResponse'];
+export type MeUpdate = Schemas['MePatch'];
 export type NotificationPrefs = Schemas['NotificationsOut'];
 export type NotificationPrefsPatch = Schemas['NotificationsPatch'];
 export type PushTokenInput = Schemas['PushTokenRequest'];
@@ -50,9 +59,8 @@ export type ManualMealInput = Schemas['ManualMealRequest'];
 export type TokenResponse = Schemas['TokenResponse'];
 /** The part of the token response the app persists. */
 export type TokenPair = Pick<TokenResponse, 'access_token' | 'refresh_token'>;
-/** TEMPORARY hand-written (see Me above): POST /v1/auth/google body and response. */
-export type GoogleSignInInput = { id_token: string; timezone?: string };
-export type GoogleTokenResponse = TokenResponse & { is_new_user: boolean };
+export type GoogleSignInInput = Schemas['GoogleSignInRequest'];
+export type GoogleTokenResponse = Schemas['GoogleSignInResponse'];
 export type RegisterInput = Schemas['RegisterRequest'];
 export type LoginInput = Schemas['LoginRequest'];
 
@@ -87,6 +95,7 @@ export type ApiErrorCode =
   | 'PET_NOT_FOUND'
   | 'PET_ALREADY_PAUSED'
   | 'PET_NOT_PAUSED'
+  | 'NOT_ENOUGH_ATTRIBUTE_POINTS'
   | 'INVALID_CURSOR'
   | 'INVALID_RESET_TOKEN'
   | 'NOT_FOUND'

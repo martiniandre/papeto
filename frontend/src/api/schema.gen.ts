@@ -72,6 +72,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/auth/google": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Google
+         * @description Sign in or sign up with a Google ID token from the device (ADR 013).
+         */
+        post: operations["google_v1_auth_google_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/auth/refresh": {
         parameters: {
             query?: never;
@@ -218,6 +238,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/pet/attributes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Allocate Attributes */
+        post: operations["allocate_attributes_v1_pet_attributes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/meals": {
         parameters: {
             query?: never;
@@ -317,6 +354,34 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * Attribute
+         * @enum {string}
+         */
+        Attribute: "strength" | "speed" | "skill" | "endurance" | "intelligence";
+        /**
+         * AttributeAllocation
+         * @description POST /pet/attributes. Unknown attributes and non-positive amounts are a 422.
+         */
+        AttributeAllocation: {
+            /** Allocations */
+            allocations: {
+                [key: string]: number;
+            };
+        };
+        /** AttributesOut */
+        AttributesOut: {
+            /** Strength */
+            strength: number;
+            /** Speed */
+            speed: number;
+            /** Skill */
+            skill: number;
+            /** Endurance */
+            endurance: number;
+            /** Intelligence */
+            intelligence: number;
+        };
         /** Body_create_meal_v1_meals_post */
         Body_create_meal_v1_meals_post: {
             /** Photo */
@@ -494,13 +559,14 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
-            /**
-             * Adult Confirmed At
-             * Format: date-time
-             */
-            adult_confirmed_at: string;
+            /** Adult Confirmed At */
+            adult_confirmed_at: string | null;
             /** Deletion Requested At */
             deletion_requested_at: string | null;
+            /** Auth Provider */
+            auth_provider: string;
+            /** Google Subject */
+            google_subject: string | null;
         };
         /** ForgotPasswordRequest */
         ForgotPasswordRequest: {
@@ -522,6 +588,32 @@ export interface components {
              */
             status: "accepted";
         };
+        /** GoogleSignInRequest */
+        GoogleSignInRequest: {
+            /** Id Token */
+            id_token: string;
+            /** Timezone */
+            timezone?: string | null;
+        };
+        /**
+         * GoogleSignInResponse
+         * @description The same token body as `/auth/login`, plus whether this sign-in created the account.
+         */
+        GoogleSignInResponse: {
+            /** Access Token */
+            access_token: string;
+            /** Refresh Token */
+            refresh_token: string;
+            /**
+             * Token Type
+             * @default bearer
+             */
+            token_type: string;
+            /** Expires In */
+            expires_in: number;
+            /** Is New User */
+            is_new_user: boolean;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -531,6 +623,15 @@ export interface components {
         HealthResponse: {
             /** Status */
             status: string;
+        };
+        /** LevelProgressOut */
+        LevelProgressOut: {
+            /** Points */
+            points: number;
+            /** Current Level At */
+            current_level_at: number;
+            /** Next Level At */
+            next_level_at: number;
         };
         /** LogMealResponse */
         LogMealResponse: {
@@ -566,6 +667,8 @@ export interface components {
             timezone?: string | null;
             /** Analytics Opt Out */
             analytics_opt_out?: boolean | null;
+            /** Adult Confirmed */
+            adult_confirmed?: true | null;
             notifications?: components["schemas"]["NotificationsPatch"] | null;
         };
         /** MeResponse */
@@ -587,6 +690,8 @@ export interface components {
             plan: components["schemas"]["Plan"];
             /** Analytics Opt Out */
             analytics_opt_out: boolean;
+            /** Adult Confirmed */
+            adult_confirmed: boolean;
             notifications: components["schemas"]["NotificationsOut"];
             /** Consents */
             consents: components["schemas"]["ConsentOut"][];
@@ -706,7 +811,7 @@ export interface components {
          * @description One-shot events returned to the app so it can play animations.
          * @enum {string}
          */
-        PetEvent: "wake_up" | "life_lost" | "celebrate";
+        PetEvent: "wake_up" | "life_lost" | "celebrate" | "level_up";
         /** PetPatch */
         PetPatch: {
             /** Name */
@@ -732,6 +837,12 @@ export interface components {
             /** Points */
             points: number;
             mood: components["schemas"]["Mood"];
+            /** Level */
+            level: number;
+            level_progress: components["schemas"]["LevelProgressOut"];
+            attributes: components["schemas"]["AttributesOut"];
+            /** Unspent Attribute Points */
+            unspent_attribute_points: number;
             /** Events */
             events: components["schemas"]["PetEvent"][];
             /** Support Hint */
@@ -755,6 +866,12 @@ export interface components {
             /** Points */
             points: number;
             mood: components["schemas"]["Mood"];
+            /** Level */
+            level: number;
+            level_progress: components["schemas"]["LevelProgressOut"];
+            attributes: components["schemas"]["AttributesOut"];
+            /** Unspent Attribute Points */
+            unspent_attribute_points: number;
         };
         /**
          * Plan
@@ -944,6 +1061,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TokenResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    google_v1_auth_google_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GoogleSignInRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoogleSignInResponse"];
                 };
             };
             /** @description Validation Error */
@@ -1282,6 +1432,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PetResponse"];
+                };
+            };
+        };
+    };
+    allocate_attributes_v1_pet_attributes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttributeAllocation"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PetResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

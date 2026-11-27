@@ -21,6 +21,8 @@ from app.domain import (
     PointsReason,
     ProductEvent,
     can_analyze_photo,
+    level_events,
+    level_for_points,
     pick_tip,
     register_log,
     settle,
@@ -39,8 +41,8 @@ from app.services.common import (
     current_plan,
     parse_timezone,
     pause_windows,
+    require_adult_user,
     require_meal_consent,
-    require_user,
 )
 from app.services.context import ServiceContext
 from app.services.errors import (
@@ -76,6 +78,11 @@ async def _persist_log(
     windows = await pause_windows(uow, user_id, zone)
     scored = await uow.points.count_on_day(user_id, PointsReason.MEAL_LOGGED, today)
     outcome = register_log(pet.state, logged_days, windows, today, scored, ctx.rules)
+    points_before = await uow.points.total(user_id)
+    level_before = level_for_points(points_before, ctx.rules)
+    level = level_for_points(points_before + sum(a.amount for a in outcome.points), ctx.rules)
+    baseline = pet.last_seen_level if pet.last_seen_level is not None else level_before
+    events = outcome.events + level_events(baseline, level)
 
     seen = await uow.meals.recent_items(user_id, today - timedelta(days=NEW_FOODS_WINDOW_DAYS))
     meal = replace(meal, new_foods=[item for item in meal.items if item.lower() not in seen])
@@ -93,7 +100,9 @@ async def _persist_log(
             for award in outcome.points
         ]
     )
-    saved = replace(pet, state=outcome.pet, last_seen_lives=outcome.pet.lives)
+    saved = replace(
+        pet, state=outcome.pet, last_seen_lives=outcome.pet.lives, last_seen_level=level
+    )
     await uow.pets.save(saved)
     view = await build_pet_view(uow, saved, outcome.pet, today, now, (), ctx.rules, zone)
     pending = life_change_events(
@@ -102,7 +111,7 @@ async def _persist_log(
     if PetEvent.WAKE_UP in outcome.events:
         pending.append((ProductEvent.PET_WOKE_UP, {}))
     pending.append((ProductEvent.MEAL_LOGGED, {"source": meal.source.value}))
-    return LogMealResult(meal=meal, pet=view, events=outcome.events, pending_events=tuple(pending))
+    return LogMealResult(meal=meal, pet=view, events=events, pending_events=tuple(pending))
 
 
 async def log_meal(
@@ -110,7 +119,7 @@ async def log_meal(
 ) -> LogMealResult:
     # 1. Cheap checks first, in a short transaction without row locks.
     async with ctx.uow_factory() as uow:
-        user = await require_user(uow, user_id)
+        user = await require_adult_user(uow, user_id)
         await require_meal_consent(uow, user_id)
         zone = parse_timezone(user.timezone)
         plan = await current_plan(uow, user_id, ctx.clock.now())
@@ -173,7 +182,7 @@ async def log_manual_meal(
     if not cleaned:
         raise ValidationFailed("Choose at least one item.")
     async with ctx.uow_factory() as uow:
-        user = await require_user(uow, user_id)
+        user = await require_adult_user(uow, user_id)
         await require_meal_consent(uow, user_id)
         zone = parse_timezone(user.timezone)
         now = ctx.clock.now()

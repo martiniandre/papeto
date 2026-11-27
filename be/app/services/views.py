@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime
 
-from app.domain import Mood, PetEvent, Plan, ProductEvent
+from app.domain import Attributes, LevelProgress, Mood, PetEvent, Plan, ProductEvent
 from app.ports.repositories import ConsentRecord, ConsentType, MealRecord, UserRecord
 
 
@@ -18,6 +18,10 @@ class PetView:
     streak_days: int
     points: int
     mood: Mood
+    level: int
+    level_progress: LevelProgress
+    attributes: Attributes
+    unspent_attribute_points: int
     events: tuple[PetEvent, ...] = ()
     support_hint: bool = False  # RF-98: show the kind message and the CVV 188 path
 

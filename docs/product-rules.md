@@ -14,13 +14,26 @@ These are requirements for the code, not legal text.
 
 ## Age and consent
 
-- 18+ confirmation at sign-up (plus the store age signal when available).
+- 18+ confirmation at sign-up (plus the store age signal when available). No birth date is asked: the checkbox is
+  enough (ADR 013). Email sign-up sends it in the register call; a Google sign-up creates the account first and
+  the app sends it from screen 2 (`PATCH /v1/me {"adult_confirmed": true}`). Until then pet and meal endpoints
+  return 403 `ADULT_CONFIRMATION_REQUIRED`; export and account deletion always work. The confirmation is recorded
+  once (`adult_confirmed_at`) and cannot be withdrawn through the API.
 - Two separate consents, stored in `consent` with document, version and timestamp:
   - `terms_privacy` — Terms of Use and Privacy Policy;
   - `meal_data` — specific, highlighted consent for meal photos and meal records (LGPD art. 11, I).
 - Without an active `meal_data` consent, meal endpoints return 403 `MEAL_CONSENT_REQUIRED`.
 - Revoking `meal_data` (Profile > Privacy): stop analyzing photos and offer export + delete of meal records or the account.
 - Analytics can be turned off in Profile > Privacy (stored per user, respected by `AnalyticsProvider`).
+
+## Sign-in (ADR 013)
+
+- Email and password, or Google. Apple later, and required before any iOS release (App Store rule once another
+  social login exists).
+- No email confirmation step for email accounts.
+- Google: the server verifies the ID token itself (signature, issuer, audience, expiry, `email_verified`). An
+  existing account is linked only when Google says the email is verified; the Google account id (`sub`) is stored
+  and is part of the export. ID tokens and emails are never logged.
 
 ## Data handling
 

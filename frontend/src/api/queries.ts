@@ -4,7 +4,7 @@ import { isApiError } from './client';
 import { usePetAlertStore } from '@/stores/petAlerts';
 
 import { api } from './endpoints';
-import type { Me, Meal, MealPatch, MealRange, MeUpdate, Pet, PetUpdate } from './types';
+import type { AttributeAllocations, Me, Meal, MealPatch, MealRange, MeUpdate, Pet, PetUpdate } from './types';
 
 export const queryKeys = {
   me: ['me'] as const,
@@ -53,6 +53,23 @@ export function useUpdatePet() {
   return useMutation({
     mutationFn: (input: PetUpdate) => api.updatePet(input),
     onSuccess: (pet: Pet) => client.setQueryData(queryKeys.pet, pet),
+  });
+}
+
+/**
+ * POST /pet/attributes. The answer is the new pet. When the server says the points are not enough
+ * (another device spent them first) the pet is refetched so the screen shows the real numbers.
+ */
+export function useSpendAttributes() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (allocations: AttributeAllocations) => api.spendAttributes(allocations),
+    onSuccess: (pet: Pet) => client.setQueryData(queryKeys.pet, pet),
+    onError: (error) => {
+      if (isApiError(error) && error.code === 'NOT_ENOUGH_ATTRIBUTE_POINTS') {
+        void client.invalidateQueries({ queryKey: queryKeys.pet });
+      }
+    },
   });
 }
 

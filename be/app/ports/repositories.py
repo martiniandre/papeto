@@ -13,7 +13,14 @@ from types import TracebackType
 from typing import Protocol, Self
 from uuid import UUID
 
-from app.domain import DEFAULT_PREFS, NoticeKind, NotificationPrefs, PetState, PointsReason
+from app.domain import (
+    DEFAULT_PREFS,
+    Attributes,
+    NoticeKind,
+    NotificationPrefs,
+    PetState,
+    PointsReason,
+)
 
 
 class ConsentType(StrEnum):
@@ -27,8 +34,15 @@ class MealSource(StrEnum):
     MANUAL = "manual"  # items chosen by hand when the photo could not be read (RF-95)
 
 
+class AuthMethod(StrEnum):
+    """How the account was created. Linking Google to an email account keeps `email`."""
+
+    EMAIL = "email"
+    GOOGLE = "google"
+
+
 class DuplicateEmailError(Exception):
-    """Raised by `UserRepository.add` when the email is already registered."""
+    """Raised by `UserRepository.add` when the email or the Google subject is already taken."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -39,11 +53,13 @@ class UserRecord:
     name: str
     timezone: str
     analytics_opt_out: bool
-    adult_confirmed_at: datetime
+    adult_confirmed_at: datetime | None  # None until the 18+ checkbox (social sign-up)
     created_at: datetime
     deletion_requested_at: datetime | None = None
     notifications: NotificationPrefs = DEFAULT_PREFS
     anonymized_at: datetime | None = None
+    auth_provider: AuthMethod = AuthMethod.EMAIL
+    google_subject: str | None = None  # Google `sub`, unique; set only from a verified token
 
 
 @dataclass(frozen=True, slots=True)
@@ -65,6 +81,9 @@ class PetRecord:
     state: PetState
     last_seen_lives: int | None
     created_at: datetime
+    # Spent attribute points (permanent in the MVP) and the last level returned to the client.
+    attributes: Attributes = field(default_factory=Attributes)
+    last_seen_level: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -187,6 +206,10 @@ class UserRepository(Protocol):
         ...
 
     async def get_by_email(self, email: str) -> UserRecord | None: ...
+    async def get_by_google_subject(self, subject: str) -> UserRecord | None:
+        """None for unknown and for anonymized accounts."""
+        ...
+
     async def save(self, user: UserRecord) -> None: ...
     async def list_notifiable_page(self, *, after: UUID | None, limit: int) -> list[UserRecord]:
         """Users not pending deletion, ordered by id, strictly after `after`."""

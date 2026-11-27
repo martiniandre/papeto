@@ -2,12 +2,26 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, StrictInt
 
-from app.domain import Mood, PetEvent
+from app.domain import Attribute, Mood, PetEvent
 from app.services.views import PetView
+
+
+class LevelProgressOut(BaseModel):
+    points: int
+    current_level_at: int
+    next_level_at: int
+
+
+class AttributesOut(BaseModel):
+    strength: int
+    speed: int
+    skill: int
+    endurance: int
+    intelligence: int
 
 
 class PetBase(BaseModel):
@@ -18,6 +32,10 @@ class PetBase(BaseModel):
     streak_days: int
     points: int
     mood: Mood
+    level: int
+    level_progress: LevelProgressOut
+    attributes: AttributesOut
+    unspent_attribute_points: int
 
     @classmethod
     def base_fields(cls, view: PetView) -> dict[str, object]:
@@ -29,6 +47,14 @@ class PetBase(BaseModel):
             "streak_days": view.streak_days,
             "points": view.points,
             "mood": view.mood,
+            "level": view.level,
+            "level_progress": {
+                "points": view.level_progress.points,
+                "current_level_at": view.level_progress.current_level_at,
+                "next_level_at": view.level_progress.next_level_at,
+            },
+            "attributes": view.attributes.as_dict(),
+            "unspent_attribute_points": view.unspent_attribute_points,
         }
 
 
@@ -70,3 +96,11 @@ class PauseRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     days: Literal[1, 3, 7]
+
+
+class AttributeAllocation(BaseModel):
+    """POST /pet/attributes. Unknown attributes and non-positive amounts are a 422."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    allocations: dict[Attribute, Annotated[StrictInt, Field(gt=0)]] = Field(min_length=1)

@@ -29,6 +29,7 @@ const me = (overrides: Partial<Me> = {}): Me => ({
   timezone: 'America/Sao_Paulo',
   plan: 'free',
   analytics_opt_out: false,
+  adult_confirmed: true,
   notifications: {
     meal_reminder: true,
     sleepy_notice: true,

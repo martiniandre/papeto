@@ -27,5 +27,9 @@ export const makePet = (overrides: Partial<Pet> = {}): Pet => ({
   mood: 'tired',
   events: [],
   support_hint: false,
+  level: 1,
+  level_progress: { points: 40, current_level_at: 0, next_level_at: 100 },
+  attributes: { strength: 0, speed: 0, skill: 0, endurance: 0, intelligence: 0 },
+  unspent_attribute_points: 0,
   ...overrides,
 });

@@ -25,6 +25,7 @@ class PetEvent(StrEnum):
     WAKE_UP = "wake_up"
     LIFE_LOST = "life_lost"
     CELEBRATE = "celebrate"
+    LEVEL_UP = "level_up"
 
 
 @dataclass(frozen=True, slots=True)

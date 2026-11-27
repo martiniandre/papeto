@@ -7,9 +7,10 @@ variables (see `.env.example`) or let your process manager do it.
 from __future__ import annotations
 
 from enum import StrEnum
+from typing import Annotated
 
-from pydantic import SecretStr
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import SecretStr, field_validator
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 class AppEnv(StrEnum):
@@ -31,6 +32,12 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     access_token_minutes: int = 15
     refresh_token_days: int = 30
+
+    # Google sign-in: OAuth client ids accepted as the ID token `aud` (web, Android, iOS).
+    # Comma-separated in GOOGLE_CLIENT_IDS. Empty (default) rejects every Google token.
+    google_client_ids: Annotated[list[str], NoDecode] = []
+    google_jwks_url: str = "https://www.googleapis.com/oauth2/v3/certs"
+    google_timeout_seconds: float = 5.0
 
     # Adapter selection: "fake" works offline; real adapters are not implemented yet.
     vision_provider: str = "fake"
@@ -61,3 +68,10 @@ class Settings(BaseSettings):
     password_reset_url: str = "papeto://reset-password"
     password_reset_minutes: int = 60
     password_reset_max_per_hour: int = 3
+
+    @field_validator("google_client_ids", mode="before")
+    @classmethod
+    def _split_client_ids(cls, value: object) -> object:
+        if isinstance(value, str):
+            return [part.strip() for part in value.split(",") if part.strip()]
+        return value

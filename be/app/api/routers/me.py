@@ -46,6 +46,7 @@ async def patch_me(body: MePatch, ctx: Ctx, user_id: UserId) -> MeResponse:
         user_id,
         timezone=body.timezone,
         analytics_opt_out=body.analytics_opt_out,
+        adult_confirmed=body.adult_confirmed,
         meal_reminder=prefs.meal_reminder,
         sleepy_notice=prefs.sleepy_notice,
         weekly_summary=prefs.weekly_summary,

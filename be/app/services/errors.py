@@ -32,6 +32,29 @@ class AdultConfirmationRequired(ServiceError):
     message = "You must confirm you are 18 or older."
 
 
+class AdultConfirmationPending(ServiceError):
+    """The account exists but the user has not confirmed 18+ yet (social sign-up). The API
+    answers 403 here, while a register body without the confirmation stays 422."""
+
+    code = "ADULT_CONFIRMATION_REQUIRED"
+    message = "Confirm you are 18 or older to continue."
+
+
+class GoogleTokenInvalid(ServiceError):
+    code = "GOOGLE_TOKEN_INVALID"
+    message = "The Google sign-in could not be verified."
+
+
+class GoogleEmailNotVerified(ServiceError):
+    code = "GOOGLE_EMAIL_NOT_VERIFIED"
+    message = "This Google account has no verified email."
+
+
+class AuthProviderUnavailable(ServiceError):
+    code = "AUTH_PROVIDER_UNAVAILABLE"
+    message = "Sign-in is unavailable right now. Try again later."
+
+
 class InvalidTimezone(ServiceError):
     code = "INVALID_TIMEZONE"
     message = "Unknown IANA timezone."
@@ -108,3 +131,8 @@ class InvalidCursor(ServiceError):
 
 
 ALL_ERRORS: tuple[type[ServiceError], ...] = tuple(ServiceError.__subclasses__())
+
+
+class NotEnoughPoints(ServiceError):
+    code = "NOT_ENOUGH_ATTRIBUTE_POINTS"
+    message = "Not enough attribute points to spend."

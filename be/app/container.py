@@ -22,6 +22,7 @@ from app.providers.fake_misc import (
     RecordingPush,
 )
 from app.providers.fake_vision import FakeFoodVision
+from app.providers.google_id_token import GoogleIdTokenVerifier, HttpJwksFetcher
 from app.providers.local_auth import LocalAuthProvider
 from app.providers.posthog_analytics import PostHogAnalytics
 from app.providers.system_clock import SystemClock, UuidGenerator
@@ -123,6 +124,12 @@ def build_container(settings: Settings) -> Container:
     clock = SystemClock()
     ids = UuidGenerator()
     vision = build_vision(settings)
+    jwks = HttpJwksFetcher(
+        url=settings.google_jwks_url, timeout_seconds=settings.google_timeout_seconds
+    )
+    google = GoogleIdTokenVerifier(
+        client_ids=settings.google_client_ids, clock=clock, fetch_jwks=jwks
+    )
     ctx = ServiceContext(
         uow_factory=SqlUowFactory(engine),
         clock=clock,
@@ -135,6 +142,7 @@ def build_container(settings: Settings) -> Container:
             access_minutes=settings.access_token_minutes,
             refresh_days=settings.refresh_token_days,
             algorithm=settings.jwt_algorithm,
+            google=google,
         ),
         analytics=build_analytics(settings),
         analytics_id_secret=_analytics_secret(settings),
@@ -160,6 +168,7 @@ def build_container(settings: Settings) -> Container:
     async def shutdown() -> None:
         if isinstance(vision.inner, OpenAICompatibleVision):
             await vision.inner.aclose()
+        await jwks.aclose()
         await redis.aclose()
         await engine.dispose()
 

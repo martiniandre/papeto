@@ -33,6 +33,7 @@ async def update_me(
     *,
     timezone: str | None,
     analytics_opt_out: bool | None,
+    adult_confirmed: bool | None = None,
     meal_reminder: bool | None = None,
     sleepy_notice: bool | None = None,
     weekly_summary: bool | None = None,
@@ -47,6 +48,9 @@ async def update_me(
             user = replace(user, timezone=timezone)
         if analytics_opt_out is not None:
             user = replace(user, analytics_opt_out=analytics_opt_out)
+        if adult_confirmed and user.adult_confirmed_at is None:
+            # Only `true` is accepted (the schema enforces it); the first confirmation is kept.
+            user = replace(user, adult_confirmed_at=ctx.clock.now())
         current = user.notifications
         prefs = NotificationPrefs(
             meal_reminder=current.meal_reminder if meal_reminder is None else meal_reminder,

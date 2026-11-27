@@ -1,4 +1,4 @@
-"""Auth routes: register, login, refresh, forgot and reset password."""
+"""Auth routes: register, login (email or Google), refresh, forgot and reset password."""
 
 from __future__ import annotations
 
@@ -8,6 +8,8 @@ from app.api.deps import Ctx
 from app.api.schemas.auth import (
     ForgotPasswordRequest,
     ForgotPasswordResponse,
+    GoogleSignInRequest,
+    GoogleSignInResponse,
     LoginRequest,
     RefreshRequest,
     RegisterRequest,
@@ -38,6 +40,13 @@ async def login(body: LoginRequest, ctx: Ctx) -> TokenResponse:
     return TokenResponse.from_pair(
         await auth_service.login(ctx, email=body.email, password=body.password)
     )
+
+
+@router.post("/google")
+async def google(body: GoogleSignInRequest, ctx: Ctx) -> GoogleSignInResponse:
+    """Sign in or sign up with a Google ID token from the device (ADR 013)."""
+    result = await auth_service.google_sign_in(ctx, id_token=body.id_token, timezone=body.timezone)
+    return GoogleSignInResponse.from_result(result)
 
 
 @router.post("/refresh")

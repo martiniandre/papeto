@@ -35,8 +35,13 @@ export type ConsentRecord = Schemas['ConsentOut'];
 export type DataExport = Schemas['ExportResponse'];
 
 export type Plan = Schemas['Plan'];
-export type Me = Schemas['MeResponse'];
-export type MeUpdate = Schemas['MePatch'];
+/**
+ * TEMPORARY hand-written additions (Google sign-in, 2026-11-26): the backend is not merged yet.
+ * `adult_confirmed` on GET/PATCH /v1/me and POST /v1/auth/google. When `npm run api:types` brings
+ * these into schema.gen.ts, delete the intersections below and alias the generated schemas again.
+ */
+export type Me = Schemas['MeResponse'] & { adult_confirmed: boolean };
+export type MeUpdate = Schemas['MePatch'] & { adult_confirmed?: boolean };
 export type NotificationPrefs = Schemas['NotificationsOut'];
 export type NotificationPrefsPatch = Schemas['NotificationsPatch'];
 export type PushTokenInput = Schemas['PushTokenRequest'];
@@ -45,6 +50,9 @@ export type ManualMealInput = Schemas['ManualMealRequest'];
 export type TokenResponse = Schemas['TokenResponse'];
 /** The part of the token response the app persists. */
 export type TokenPair = Pick<TokenResponse, 'access_token' | 'refresh_token'>;
+/** TEMPORARY hand-written (see Me above): POST /v1/auth/google body and response. */
+export type GoogleSignInInput = { id_token: string; timezone?: string };
+export type GoogleTokenResponse = TokenResponse & { is_new_user: boolean };
 export type RegisterInput = Schemas['RegisterRequest'];
 export type LoginInput = Schemas['LoginRequest'];
 
@@ -63,6 +71,9 @@ export type ApiErrorCode =
   | 'INVALID_CREDENTIALS'
   | 'EMAIL_ALREADY_REGISTERED'
   | 'ADULT_CONFIRMATION_REQUIRED'
+  | 'GOOGLE_TOKEN_INVALID'
+  | 'GOOGLE_EMAIL_NOT_VERIFIED'
+  | 'AUTH_PROVIDER_UNAVAILABLE'
   | 'INVALID_TIMEZONE'
   | 'VALIDATION_ERROR'
   | 'MEAL_CONSENT_REQUIRED'

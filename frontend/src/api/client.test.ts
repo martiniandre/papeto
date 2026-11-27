@@ -1,4 +1,4 @@
-import { ABORTED, ApiError, NETWORK_ERROR, request, setUnauthorizedListener } from './client';
+import { ABORTED, ApiError, NETWORK_ERROR, request, setAdultConfirmationListener, setUnauthorizedListener } from './client';
 import { tokenStorage } from './tokenStorage';
 
 const json = (status: number, body: unknown) =>
@@ -75,5 +75,22 @@ describe('api client', () => {
     await expect(request('/meals', { signal: controller.signal })).rejects.toMatchObject({
       code: ABORTED,
     });
+  });
+
+  it('notifies the listener on 403 ADULT_CONFIRMATION_REQUIRED and still throws', async () => {
+    const listener = jest.fn();
+    setAdultConfirmationListener(listener);
+    fetchMock.mockResolvedValueOnce(
+      json(403, { error: { code: 'ADULT_CONFIRMATION_REQUIRED', message: '' } }),
+    );
+    await expect(request('/pet')).rejects.toMatchObject({ code: 'ADULT_CONFIRMATION_REQUIRED' });
+    expect(listener).toHaveBeenCalledTimes(1);
+
+    fetchMock.mockResolvedValueOnce(
+      json(403, { error: { code: 'MEAL_CONSENT_REQUIRED', message: '' } }),
+    );
+    await expect(request('/meals')).rejects.toMatchObject({ code: 'MEAL_CONSENT_REQUIRED' });
+    expect(listener).toHaveBeenCalledTimes(1);
+    setAdultConfirmationListener(null);
   });
 });

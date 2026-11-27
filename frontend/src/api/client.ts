@@ -33,6 +33,13 @@ export function setUnauthorizedListener(listener: Listener | null): void {
   onUnauthorized = listener;
 }
 
+let onAdultConfirmationRequired: Listener | null = null;
+
+/** Called on 403 `ADULT_CONFIRMATION_REQUIRED` from any endpoint (the app routes to screen 2). */
+export function setAdultConfirmationListener(listener: Listener | null): void {
+  onAdultConfirmationRequired = listener;
+}
+
 export interface RequestOptions {
   method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
   body?: unknown;
@@ -124,7 +131,13 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
     }
   }
 
-  if (!response.ok) throw await toApiError(response);
+  if (!response.ok) {
+    const error = await toApiError(response);
+    if (error.status === 403 && error.code === 'ADULT_CONFIRMATION_REQUIRED') {
+      onAdultConfirmationRequired?.();
+    }
+    throw error;
+  }
   if (response.status === 204 || response.status === 202) {
     const text = await response.text();
     return (text ? JSON.parse(text) : undefined) as T;

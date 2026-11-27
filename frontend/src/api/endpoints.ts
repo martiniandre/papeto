@@ -2,6 +2,8 @@ import { request } from './client';
 import type {
   ConsentInput,
   DataExport,
+  GoogleSignInInput,
+  GoogleTokenResponse,
   LoginInput,
   Me,
   Meal,
@@ -24,6 +26,9 @@ export const api = {
     request<TokenPair>('/auth/register', { method: 'POST', body: input, anonymous: true }),
   login: (input: LoginInput) =>
     request<TokenPair>('/auth/login', { method: 'POST', body: input, anonymous: true }),
+  /** Exchanges a Google id token for our tokens. `is_new_user` tells flow 1 whether the account was just created. */
+  googleSignIn: (input: GoogleSignInInput) =>
+    request<GoogleTokenResponse>('/auth/google', { method: 'POST', body: input, anonymous: true }),
   /** Always 202 `{status: "accepted"}`, whether or not the email has an account. */
   forgotPassword: (email: string) =>
     request<{ status: string }>('/auth/password/forgot', {

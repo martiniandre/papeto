@@ -14,11 +14,14 @@ export function hasRequiredConsents(me: Pick<Me, 'consents'>): boolean {
 }
 
 /**
- * Where a signed-in user goes (flow 1): missing consents → 2, unnamed pet → 43, otherwise Home.
+ * Where a signed-in user goes (flow 1): unconfirmed adult or missing consents → 2, unnamed pet → 43, otherwise Home.
  * An existing, fully onboarded account goes straight to Home.
  */
-export function nextOnboardingRoute(me: Pick<Me, 'consents'>, pet: Pick<Pet, 'name'>): OnboardingRoute {
-  if (!hasRequiredConsents(me)) return '/(onboarding)/age-terms';
+export function nextOnboardingRoute(
+  me: Pick<Me, 'consents' | 'adult_confirmed'>,
+  pet: Pick<Pet, 'name'>,
+): OnboardingRoute {
+  if (!me.adult_confirmed || !hasRequiredConsents(me)) return '/(onboarding)/age-terms';
   if (!pet.name) return '/(onboarding)/name-pet';
   return '/(tabs)/home';
 }

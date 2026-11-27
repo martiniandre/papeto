@@ -14,6 +14,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { setAdultConfirmationListener } from '@/api/client';
 import { createQueryClient } from '@/api/queries';
 import { listenForExpiredSession, restoreSession } from '@/features/auth/session';
 import { wireOnlineManager } from '@/hooks/useOnline';
@@ -31,7 +32,9 @@ export default function RootLayout() {
 
   useEffect(() => {
     listenForExpiredSession(queryClient);
+    setAdultConfirmationListener(() => router.replace('/(onboarding)/age-terms'));
     void restoreSession();
+    return () => setAdultConfirmationListener(null);
   }, [queryClient]);
 
   useEffect(() => {

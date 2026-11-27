@@ -6,7 +6,13 @@ import { renderWithProviders } from '@/test/render';
 
 import AgeTermsScreen from './AgeTermsScreen';
 
-jest.mock('@/api/endpoints', () => ({ api: { acceptConsent: jest.fn(async () => undefined) } }));
+jest.mock('@/api/endpoints', () => ({
+  api: {
+    acceptConsent: jest.fn(async () => undefined),
+    updateMe: jest.fn(async () => ({})),
+    getPet: jest.fn(async () => ({ name: null })),
+  },
+}));
 
 describe('<AgeTermsScreen /> (screen 2)', () => {
   beforeEach(() => jest.clearAllMocks());
@@ -42,7 +48,17 @@ describe('<AgeTermsScreen /> (screen 2)', () => {
     await fireEvent.press(continueButton());
 
     await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/(onboarding)/name-pet'));
+    expect(api.updateMe).toHaveBeenCalledWith({ adult_confirmed: true });
     expect(api.acceptConsent).toHaveBeenCalledWith({ type: 'terms_privacy', version: '1.0', accepted: true });
     expect(api.acceptConsent).toHaveBeenCalledWith({ type: 'meal_data', version: '1.0', accepted: true });
+  });
+
+  it('skips naming when the account already has a pet name', async () => {
+    (api.getPet as jest.Mock).mockResolvedValueOnce({ name: 'Bolinha' });
+    await renderWithProviders(<AgeTermsScreen />);
+    await fireEvent.press(screen.getByTestId('consent-terms'));
+    await fireEvent.press(screen.getByTestId('consent-meal-data'));
+    await fireEvent.press(continueButton());
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/(tabs)/home'));
   });
 });

@@ -12,9 +12,12 @@ export default function Index() {
   const status = useSessionStore((state) => state.status);
   const signedIn = status === 'signedIn';
   const me = useMe(signedIn);
-  const pet = usePet(signedIn);
+  const adultPending = me.data?.adult_confirmed === false;
+  // GET /pet answers 403 until the adult is confirmed.
+  const pet = usePet(signedIn && me.isSuccess && !adultPending);
 
   if (!signedIn) return <Redirect href="/(onboarding)/sign-in" />;
+  if (adultPending) return <Redirect href="/(onboarding)/age-terms" />;
   if (me.isError || pet.isError) {
     return (
       <Screen>
@@ -22,7 +25,7 @@ export default function Index() {
           error={me.error ?? pet.error}
           onRetry={() => {
             void me.refetch();
-            void pet.refetch();
+            if (pet.isError) void pet.refetch();
           }}
         />
       </Screen>

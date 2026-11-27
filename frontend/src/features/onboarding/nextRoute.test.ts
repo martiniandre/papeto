@@ -12,21 +12,30 @@ const consent = (type: ConsentRecord['type'], accepted = true): ConsentRecord =>
 
 describe('nextOnboardingRoute', () => {
   it('asks for consents when any of the two is missing', () => {
-    expect(nextOnboardingRoute({ consents: [] }, { name: 'Bolinha' })).toBe('/(onboarding)/age-terms');
+    expect(nextOnboardingRoute({ adult_confirmed: true, consents: [] }, { name: 'Bolinha' })).toBe('/(onboarding)/age-terms');
     expect(
-      nextOnboardingRoute({ consents: [consent('terms_privacy'), consent('meal_data', false)] }, { name: 'B' }),
+      nextOnboardingRoute({ adult_confirmed: true, consents: [consent('terms_privacy'), consent('meal_data', false)] }, { name: 'B' }),
+    ).toBe('/(onboarding)/age-terms');
+  });
+
+  it('asks for screen 2 when the adult is not confirmed, even with consents', () => {
+    expect(
+      nextOnboardingRoute(
+        { adult_confirmed: false, consents: [consent('terms_privacy'), consent('meal_data')] },
+        { name: 'Bolinha' },
+      ),
     ).toBe('/(onboarding)/age-terms');
   });
 
   it('asks for the pet name next', () => {
     expect(
-      nextOnboardingRoute({ consents: [consent('terms_privacy'), consent('meal_data')] }, { name: '' }),
+      nextOnboardingRoute({ adult_confirmed: true, consents: [consent('terms_privacy'), consent('meal_data')] }, { name: '' }),
     ).toBe('/(onboarding)/name-pet');
   });
 
   it('sends an onboarded account straight to Home', () => {
     expect(
-      nextOnboardingRoute({ consents: [consent('terms_privacy'), consent('meal_data')] }, { name: 'Bolinha' }),
+      nextOnboardingRoute({ adult_confirmed: true, consents: [consent('terms_privacy'), consent('meal_data')] }, { name: 'Bolinha' }),
     ).toBe('/(tabs)/home');
   });
 });

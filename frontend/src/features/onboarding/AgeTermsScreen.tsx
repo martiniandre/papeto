@@ -25,12 +25,16 @@ export default function AgeTermsScreen() {
 
   const save = useMutation({
     mutationFn: async () => {
+      // Adult confirmation first: consents and pet endpoints refuse an unconfirmed adult.
+      await api.updateMe({ adult_confirmed: true });
       await api.acceptConsent({ type: 'terms_privacy', version: CONSENT_VERSION, accepted: true });
       await api.acceptConsent({ type: 'meal_data', version: CONSENT_VERSION, accepted: true });
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: queryKeys.me });
-      router.replace('/(onboarding)/name-pet');
+      // An existing pet name (account that came back) skips naming.
+      const pet = await queryClient.fetchQuery({ queryKey: queryKeys.pet, queryFn: api.getPet });
+      router.replace(pet.name ? '/(tabs)/home' : '/(onboarding)/name-pet');
     },
   });
 

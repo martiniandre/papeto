@@ -19,12 +19,13 @@
     "signIn": {
       "title": "Seu bichinho vive dos seus registros",
       "subtitle": "Fotografe suas refeições e cuide do Bolinha.",
-      "apple": "Entrar com Apple",
       "google": "Entrar com Google",
       "email": "Entrar com e-mail",
       "signingIn": "Entrando…",
       "failure": "Não deu para entrar. Tente de novo.",
-      "socialUnavailable": "Este jeito de entrar ainda não está disponível. Use o e-mail."
+      "googleUnavailable": "Entrar com Google não está disponível nesta versão do app. Use o e-mail.",
+      "googleFailed": "Não deu para entrar com o Google. Tente de novo.",
+      "googleProgress": "Entrando com o Google…"
     },
     "email": {
       "title": "Entrar com e-mail",
@@ -474,6 +475,10 @@
     "VISION_UNAVAILABLE": "Nosso analisador está com problemas agora.",
     "PREMIUM_REQUIRED": "Disponível no Premium.",
     "MEAL_NOT_FOUND": "Esta refeição não está mais no histórico.",
+    "GOOGLE_TOKEN_INVALID": "Não conseguimos confirmar sua conta Google. Tente entrar de novo.",
+    "GOOGLE_EMAIL_NOT_VERIFIED": "O e-mail desta conta Google não foi verificado. Verifique-o no Google ou entre com outro e-mail.",
+    "AUTH_PROVIDER_UNAVAILABLE": "O login com Google está fora do ar agora. Tente em alguns minutos ou use o e-mail.",
+    "ADULT_CONFIRMATION_REQUIRED": "Antes de continuar, confirme que você tem 18 anos ou mais.",
     "INVALID_RESET_TOKEN": "Este link não vale mais. Peça um novo link para criar a senha."
   }
 }
